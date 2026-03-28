@@ -263,6 +263,7 @@ export type Database = {
           approvato_da: number | null
           approvato_il: string | null
           attivo: boolean
+          auth_user_id: string | null
           codice_fiscale: string | null
           cognome: string
           created_at: string
@@ -286,6 +287,7 @@ export type Database = {
           approvato_da?: number | null
           approvato_il?: string | null
           attivo?: boolean
+          auth_user_id?: string | null
           codice_fiscale?: string | null
           cognome: string
           created_at?: string
@@ -309,6 +311,7 @@ export type Database = {
           approvato_da?: number | null
           approvato_il?: string | null
           attivo?: boolean
+          auth_user_id?: string | null
           codice_fiscale?: string | null
           cognome?: string
           created_at?: string
@@ -1016,6 +1019,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_dashboard_consulente: {
+        Args: { p_anno: number; p_consulente_id: number; p_mese: number }
+        Returns: {
+          cognome: string
+          fatturato_mese: number
+          gv_mese: number
+          gv_min: number
+          gv_prossimo: number
+          nome: string
+          provvigione_pers: number
+          pv_mese: number
+          pv_min: number
+          status: string
+          status_max: string
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }

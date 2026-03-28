@@ -1,29 +1,18 @@
-// Dati mock — in Fase 1 arriveranno da GET /functions/v1/dashboard/:id
-const MOCK_CONSULENTE = {
-  nome: "Francesco",
-  cognome: "Russo",
-  status: "DIRECTOR",
-  pvMese: 102,
-  pvMin: 80,          // requisito attività DIRECTOR
-  pvNextLevel: 150,   // requisito GV per AMBASSADOR (usato come target PV visivo)
-  gvMese: 297,        // somma PV dei 4 consulenti nel downline
-  gvNextLevel: 500,   // soglia GV per AMBASSADOR
-  guadagniMese: {
-    provvigionePersonale: 15.30,
-    redditoresidualeL1: 22.40,
-    redditoresidualeL2: 6.90,
-    cab: 250.00,
-    totale: 294.60,
-  },
-};
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-function ProgressBar({ value, max, color = "var(--color-gold)" }: { value: number; max: number; color?: string }) {
-  const pct = Math.min((value / max) * 100, 100);
+const MESI_IT = [
+  "", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+  "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
+];
+
+function ProgressBar({ value, max }: { value: number; max: number }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
     <div className="mt-3 h-1.5 w-full rounded-full" style={{ backgroundColor: "var(--color-ash)" }}>
       <div
         className="h-1.5 rounded-full transition-all"
-        style={{ width: `${pct}%`, backgroundColor: color }}
+        style={{ width: `${pct}%`, backgroundColor: "var(--color-gold)" }}
       />
     </div>
   );
@@ -56,12 +45,64 @@ function CardValue({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function DashboardPage() {
-  const d = MOCK_CONSULENTE;
+export default async function DashboardPage() {
+  const now   = new Date();
+  const anno  = now.getFullYear();
+  const mese  = now.getMonth() + 1;
+
+  const supabase = await createClient();
+
+  // Recupera l'utente autenticato e il consulente collegato
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: consulente } = await supabase
+    .from("consulenti")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (!consulente) {
+    return (
+      <div className="p-6 text-sm" style={{ color: "var(--color-muted)" }}>
+        Nessun consulente associato a questo account.
+      </div>
+    );
+  }
+
+  const { data, error } = await supabase
+    .rpc("get_dashboard_consulente", {
+      p_consulente_id: consulente.id,
+      p_anno:          anno,
+      p_mese:          mese,
+    })
+    .single();
+
+  if (error || !data) {
+    return (
+      <div className="p-6 text-sm" style={{ color: "var(--color-muted)" }}>
+        Errore nel caricamento dashboard: {error?.message ?? "nessun dato"}
+      </div>
+    );
+  }
+
+  const d = data as {
+    nome: string; cognome: string; status: string; status_max: string;
+    pv_min: number; gv_min: number; gv_prossimo: number;
+    pv_mese: number; gv_mese: number;
+    fatturato_mese: number; provvigione_pers: number;
+  };
+
+  const guadagniStimati = Number(d.fatturato_mese) * Number(d.provvigione_pers);
+  const pvMese          = Number(d.pv_mese);
+  const gvMese          = Number(d.gv_mese);
+  const pvMin           = Number(d.pv_min);
+  const gvProssimo      = Number(d.gv_prossimo);
+  const attivo          = pvMese >= pvMin;
 
   return (
     <div>
-      {/* Titolo pagina */}
+      {/* Intestazione */}
       <div className="mb-6">
         <h1
           className="text-2xl font-bold"
@@ -70,7 +111,8 @@ export default function DashboardPage() {
           Ciao, {d.nome}
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
-          Marzo 2026 · <span style={{ color: "var(--color-gold)" }}>{d.status}</span>
+          {MESI_IT[mese]} {anno} ·{" "}
+          <span style={{ color: "var(--color-gold)" }}>{d.status}</span>
         </p>
       </div>
 
@@ -80,22 +122,26 @@ export default function DashboardPage() {
         {/* Card 1 — PV mese */}
         <Card>
           <CardLabel>PV mese</CardLabel>
-          <CardValue>{d.pvMese}</CardValue>
-          <ProgressBar value={d.pvMese} max={d.pvNextLevel} />
+          <CardValue>{pvMese}</CardValue>
+          <ProgressBar value={pvMese} max={pvMin} />
           <div className="mt-2 flex justify-between text-xs" style={{ color: "var(--color-muted)" }}>
-            <span>Min attività: {d.pvMin}</span>
-            <span>{d.pvMese}/{d.pvNextLevel} per promozione</span>
+            <span>Min attività: {pvMin}</span>
+            <span>
+              {pvMin > 0 ? Math.round((pvMese / pvMin) * 100) : 0}%
+            </span>
           </div>
         </Card>
 
         {/* Card 2 — GV mese */}
         <Card>
           <CardLabel>GV mese (team)</CardLabel>
-          <CardValue>{d.gvMese}</CardValue>
-          <ProgressBar value={d.gvMese} max={d.gvNextLevel} />
+          <CardValue>{gvMese}</CardValue>
+          <ProgressBar value={gvMese} max={gvProssimo} />
           <div className="mt-2 flex justify-between text-xs" style={{ color: "var(--color-muted)" }}>
-            <span>4 consulenti attivi</span>
-            <span>{d.gvMese}/{d.gvNextLevel} per prossimo livello</span>
+            <span>Obiettivo: {gvProssimo.toLocaleString("it-IT")}</span>
+            <span>
+              {gvProssimo > 0 ? Math.round((gvMese / gvProssimo) * 100) : 0}%
+            </span>
           </div>
         </Card>
 
@@ -109,33 +155,33 @@ export default function DashboardPage() {
             {d.status}
           </p>
           <div className="mt-3 space-y-1 text-xs" style={{ color: "var(--color-muted)" }}>
-            <p>Livelli residuale sbloccati: 5/8</p>
-            <p>CAB attivo · Bonus Car no</p>
-            <p style={{ color: "#22c55e" }}>● Attivo questo mese</p>
+            <p>Status massimo: {d.status_max}</p>
+            <p>Min GV corrente: {Number(d.gv_min).toLocaleString("it-IT")}</p>
+            <p style={{ color: attivo ? "#22c55e" : "#ef4444" }}>
+              {attivo ? "● Attivo questo mese" : "● Inattivo — PV insufficienti"}
+            </p>
           </div>
         </Card>
 
         {/* Card 4 — Guadagni stimati */}
         <Card>
           <CardLabel>Guadagni stimati</CardLabel>
-          <CardValue>€ {d.guadagniMese.totale.toFixed(2)}</CardValue>
-          <div className="mt-3 space-y-1 text-xs" style={{ color: "var(--color-muted)" }}>
+          <CardValue>€ {guadagniStimati.toFixed(2)}</CardValue>
+          <div className="mt-3 space-y-1.5 text-xs" style={{ color: "var(--color-muted)" }}>
             <div className="flex justify-between">
-              <span>Provvigione personale</span>
-              <span>€ {d.guadagniMese.provvigionePersonale.toFixed(2)}</span>
+              <span>Fatturato personale</span>
+              <span>€ {Number(d.fatturato_mese).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Residuale L1</span>
-              <span>€ {d.guadagniMese.redditoresidualeL1.toFixed(2)}</span>
+            <div
+              className="flex justify-between pt-1.5"
+              style={{ borderTop: "1px solid var(--color-border)", color: "var(--color-gold)" }}
+            >
+              <span>Provvigione ({Math.round(Number(d.provvigione_pers) * 100)}%)</span>
+              <span>€ {guadagniStimati.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Residuale L2</span>
-              <span>€ {d.guadagniMese.redditoresidualeL2.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between pt-1" style={{ borderTop: "1px solid var(--color-border)", color: "var(--color-gold)" }}>
-              <span>CAB</span>
-              <span>€ {d.guadagniMese.cab.toFixed(2)}</span>
-            </div>
+            <p className="text-xs pt-1" style={{ color: "var(--color-ash)", fontStyle: "italic" }}>
+              Reddito residuale: disponibile in Fase 1
+            </p>
           </div>
         </Card>
       </div>
