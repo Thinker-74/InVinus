@@ -645,7 +645,7 @@ INSERT INTO consulenti (
    2, 'ADVISOR', 'ADVISOR', 55.00, 160.00,
    TRUE, FALSE, 'ref-ld003', 'attivo', '2025-04-01 11:00:00'),
 
-(4, 'Marta',     'Esposito',   'marta.esposito@yahoo.it',   '+39 366 4000004', 'SPSMRTA95D50H501Z',
+(4, 'Marta',     'Esposito',   'marta.esposito@yahoo.it',   '+39 366 4000004', 'SPSMRT95D50H501Z',
    3, 'APPRENTICE', 'APPRENTICE', 52.00, 55.00,
    TRUE, FALSE, 'ref-me004', 'attivo', '2025-07-20 14:00:00'),
 
