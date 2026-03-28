@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.db
+*.log
+*.zip
+.DS_Store
+thumbs.db
+__pycache__/
+*.pyc
+coverage/
