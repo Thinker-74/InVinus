@@ -1019,6 +1019,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      crea_ordine_consulente: {
+        Args: { p_cliente_id: number; p_righe: Json; p_tipo: string }
+        Returns: number
+      }
       get_dashboard_consulente: {
         Args: { p_anno: number; p_consulente_id: number; p_mese: number }
         Returns: {
