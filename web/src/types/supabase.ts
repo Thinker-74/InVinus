@@ -1019,9 +1019,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aggiungi_cliente_consulente: {
+        Args: {
+          p_cognome: string
+          p_email: string
+          p_nome: string
+          p_telefono: string
+        }
+        Returns: number
+      }
       crea_ordine_consulente: {
         Args: { p_cliente_id: number; p_righe: Json; p_tipo: string }
         Returns: number
+      }
+      get_clienti_consulente: {
+        Args: { p_consulente_id: number }
+        Returns: {
+          cognome: string
+          data_primo_acquisto: string
+          email: string
+          id: number
+          n_ordini: number
+          nome: string
+          segmento: string
+          telefono: string
+          totale_speso: number
+          ultimo_ordine: string
+        }[]
       }
       get_dashboard_consulente: {
         Args: { p_anno: number; p_consulente_id: number; p_mese: number }
@@ -1063,8 +1087,6 @@ export type Database = {
           status: string
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       denominazione_vino: "DOP" | "DOCG" | "DOC" | "IGT"
