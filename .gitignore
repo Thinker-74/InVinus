@@ -9,3 +9,9 @@ thumbs.db
 __pycache__/
 *.pyc
 coverage/
+*.tar.gz
+*.tar
+package-lock.json
+Read me.txt
+init-nuovo-progetto.md
+workflow-cheatsheet.md
