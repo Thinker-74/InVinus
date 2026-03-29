@@ -1046,6 +1046,19 @@ export type Database = {
           status_max: string
         }[]
       }
+      get_team_consulente: {
+        Args: { p_anno: number; p_consulente_id: number; p_mese: number }
+        Returns: {
+          cognome: string
+          id: number
+          livello: number
+          nome: string
+          pv_mese: number
+          pv_min: number
+          sponsor_id: number
+          status: string
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
