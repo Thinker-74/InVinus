@@ -9,13 +9,9 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
+        getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -25,9 +21,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh della sessione — necessario per mantenere il token aggiornato
   const { data: { user } } = await supabase.auth.getUser();
-
   const { pathname } = request.nextUrl;
 
   // Setta cookie referral se visita /ref/[code] (dura 30 giorni)
@@ -58,6 +52,48 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // Protezione /admin: solo ruolo admin
+  if (user && pathname.startsWith("/admin")) {
+    const { data: consulente } = await supabase
+      .from("consulenti")
+      .select("ruolo")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (consulente?.ruolo !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+
+    // Setta cookie ruolo per la sidebar (httpOnly: false → leggibile da JS client)
+    supabaseResponse.cookies.set("invinus_ruolo", "admin", {
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 8, // 8 ore, viene rinnovato ad ogni navigazione admin
+    });
+  }
+
+  // Per utenti autenticati non-admin, assicura che il cookie ruolo rifletta "consulente"
+  if (user && !pathname.startsWith("/admin") && !isPublic) {
+    const currentRuolo = request.cookies.get("invinus_ruolo")?.value;
+    if (!currentRuolo) {
+      // Fetch ruolo una volta sola e cachelo in cookie
+      const { data: consulente } = await supabase
+        .from("consulenti")
+        .select("ruolo")
+        .eq("auth_user_id", user.id)
+        .single();
+      if (consulente) {
+        supabaseResponse.cookies.set("invinus_ruolo", consulente.ruolo ?? "consulente", {
+          path: "/",
+          sameSite: "lax",
+          maxAge: 60 * 60 * 8,
+        });
+      }
+    }
   }
 
   return supabaseResponse;

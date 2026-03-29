@@ -1,44 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const NAV_ITEMS = [
-  { href: "/dashboard",    label: "Dashboard" },
-  { href: "/team",         label: "Team" },
-  { href: "/catalogo",     label: "Catalogo" },
-  { href: "/consulenti",   label: "Consulenti" },
-  { href: "/clienti",      label: "Clienti" },
-  { href: "/ordini",             label: "Ordini" },
-  { href: "/provvigioni",        label: "Provvigioni" },
-  { href: "/referral/gestisci",  label: "Referral" },
-  { href: "/eventi",             label: "Eventi" },
+  { href: "/dashboard",         label: "Dashboard" },
+  { href: "/team",              label: "Team" },
+  { href: "/catalogo",          label: "Catalogo" },
+  { href: "/consulenti",        label: "Consulenti" },
+  { href: "/clienti",           label: "Clienti" },
+  { href: "/ordini",            label: "Ordini" },
+  { href: "/provvigioni",       label: "Provvigioni" },
+  { href: "/referral/gestisci", label: "Referral" },
+  { href: "/eventi",            label: "Eventi" },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+const ADMIN_ITEMS = [
+  { href: "/admin/dashboard",   label: "KPI globali" },
+  { href: "/admin/consulenti",  label: "Consulenti" },
+  { href: "/admin/candidature", label: "Candidature" },
+  { href: "/admin/provvigioni", label: "Batch provv." },
+];
+
+function getCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  return document.cookie.split("; ").find((r) => r.startsWith(name + "="))?.split("=")[1];
+}
+
+function NavLinks({ onNavigate, isAdmin }: { onNavigate?: () => void; isAdmin: boolean }) {
   const pathname = usePathname();
+
+  function NavItem({ href, label }: { href: string; label: string }) {
+    const active = pathname === href || pathname.startsWith(href + "/");
+    return (
+      <Link
+        href={href}
+        onClick={onNavigate}
+        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+        style={{
+          backgroundColor: active ? "var(--color-ash)" : "transparent",
+          color: active ? "var(--color-gold)" : "var(--color-muted)",
+        }}
+      >
+        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: active ? "var(--color-gold)" : "var(--color-ash)" }} />
+        {label}
+      </Link>
+    );
+  }
+
   return (
-    <nav className="flex-1 space-y-0.5 px-3 py-4">
-      {NAV_ITEMS.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(item.href + "/");
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
-            style={{
-              backgroundColor: active ? "var(--color-ash)" : "transparent",
-              color: active ? "var(--color-gold)" : "var(--color-muted)",
-            }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: active ? "var(--color-gold)" : "var(--color-ash)" }} />
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">
+      {NAV_ITEMS.map((item) => <NavItem key={item.href} {...item} />)}
+
+      {isAdmin && (
+        <>
+          <div className="px-3 pt-4 pb-1">
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--color-muted)" }}>
+              Admin
+            </p>
+          </div>
+          {ADMIN_ITEMS.map((item) => <NavItem key={item.href} {...item} />)}
+        </>
+      )}
     </nav>
   );
 }
@@ -75,12 +100,14 @@ function UserFooter() {
 
 export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(getCookie("invinus_ruolo") === "admin");
+  }, []);
 
   const Logo = () => (
-    <span
-      className="text-xl font-bold tracking-wide"
-      style={{ fontFamily: "var(--font-playfair)", color: "var(--color-gold)" }}
-    >
+    <span className="text-xl font-bold tracking-wide" style={{ fontFamily: "var(--font-playfair)", color: "var(--color-gold)" }}>
       InVinus
     </span>
   );
@@ -95,7 +122,7 @@ export function Sidebar() {
         <div className="flex h-16 items-center px-6" style={{ borderBottom: "1px solid var(--color-border)" }}>
           <Logo />
         </div>
-        <NavLinks />
+        <NavLinks isAdmin={isAdmin} />
         <UserFooter />
       </aside>
 
@@ -118,20 +145,13 @@ export function Sidebar() {
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside
-            className="relative flex flex-col w-64 h-full"
-            style={{ backgroundColor: "var(--color-smoke)" }}
-          >
+          <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.6)" }} onClick={() => setMobileOpen(false)} />
+          <aside className="relative flex flex-col w-64 h-full" style={{ backgroundColor: "var(--color-smoke)" }}>
             <div className="flex items-center justify-between px-6 h-14" style={{ borderBottom: "1px solid var(--color-border)" }}>
               <Logo />
               <button onClick={() => setMobileOpen(false)} style={{ color: "var(--color-muted)" }}>✕</button>
             </div>
-            <NavLinks onNavigate={() => setMobileOpen(false)} />
+            <NavLinks isAdmin={isAdmin} onNavigate={() => setMobileOpen(false)} />
             <UserFooter />
           </aside>
         </div>

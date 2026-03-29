@@ -359,6 +359,7 @@ export type Database = {
           messaggio_referral: string | null
           nome: string
           pv_mese_corrente: number
+          ruolo: Database["public"]["Enums"]["ruolo_consulente"]
           specialita: string | null
           sponsor_id: number | null
           stato_account: Database["public"]["Enums"]["stato_account_consulente"]
@@ -387,6 +388,7 @@ export type Database = {
           messaggio_referral?: string | null
           nome: string
           pv_mese_corrente?: number
+          ruolo?: Database["public"]["Enums"]["ruolo_consulente"]
           specialita?: string | null
           sponsor_id?: number | null
           stato_account?: Database["public"]["Enums"]["stato_account_consulente"]
@@ -415,6 +417,7 @@ export type Database = {
           messaggio_referral?: string | null
           nome?: string
           pv_mese_corrente?: number
+          ruolo?: Database["public"]["Enums"]["ruolo_consulente"]
           specialita?: string | null
           sponsor_id?: number | null
           stato_account?: Database["public"]["Enums"]["stato_account_consulente"]
@@ -1144,6 +1147,34 @@ export type Database = {
         Args: { p_cliente_id: number; p_righe: Json; p_tipo: string }
         Returns: number
       }
+      get_admin_kpi: {
+        Args: { p_anno: number; p_mese: number }
+        Returns: {
+          consulenti_attivi: number
+          fatturato_mese: number
+          nuovi_iscritti: number
+          ordini_mese: number
+        }[]
+      }
+      get_admin_top_consulenti: {
+        Args: { p_anno: number; p_limit?: number; p_mese: number }
+        Returns: {
+          cognome: string
+          id: number
+          nome: string
+          pv_mese: number
+          status: string
+        }[]
+      }
+      get_admin_trend: {
+        Args: { p_mesi?: number }
+        Returns: {
+          anno: number
+          fatturato: number
+          mese: number
+          n_ordini: number
+        }[]
+      }
       get_clienti_consulente: {
         Args: { p_consulente_id: number }
         Returns: {
@@ -1226,6 +1257,7 @@ export type Database = {
         | "CAMPIONE_GRATUITO"
         | "OMAGGIO_PROMO"
         | "STARTER_KIT"
+      ruolo_consulente: "consulente" | "admin"
       stato_account_consulente:
         | "attivo"
         | "sospeso"
@@ -1414,6 +1446,7 @@ export const Constants = {
         "OMAGGIO_PROMO",
         "STARTER_KIT",
       ],
+      ruolo_consulente: ["consulente", "admin"],
       stato_account_consulente: [
         "attivo",
         "sospeso",
