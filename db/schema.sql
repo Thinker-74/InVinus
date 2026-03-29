@@ -8,7 +8,8 @@
 -- EXTENSIONS
 -- ---------------------------------------------------------------------------
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS pg_trgm;  -- per full-text search su prodotti
+CREATE SCHEMA  IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;  -- per full-text search su prodotti
 
 
 -- ---------------------------------------------------------------------------
