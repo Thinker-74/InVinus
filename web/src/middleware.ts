@@ -30,8 +30,23 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Setta cookie referral se visita /ref/[code] (dura 30 giorni)
+  if (pathname.startsWith("/ref/")) {
+    const code = pathname.split("/")[2];
+    if (code) {
+      supabaseResponse.cookies.set("invinus_referral", code, {
+        maxAge: 60 * 60 * 24 * 30,
+        path: "/",
+        sameSite: "lax",
+      });
+    }
+  }
+
   // Route pubbliche
-  const isPublic = pathname === "/login" || pathname === "/";
+  const isPublic =
+    pathname === "/login" ||
+    pathname === "/" ||
+    pathname.startsWith("/ref/");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

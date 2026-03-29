@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import ReferralCard from "./ReferralCard";
 
 const MESI_IT = [
   "", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -76,7 +77,7 @@ export default async function DashboardPage() {
 
   const { data: consulente } = await supabase
     .from("consulenti")
-    .select("id")
+    .select("id, link_referral")
     .eq("auth_user_id", user.id)
     .single();
 
@@ -205,6 +206,13 @@ export default async function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Referral link */}
+      {consulente.link_referral && (
+        <div className="mt-4">
+          <ReferralCard initialCode={consulente.link_referral} />
+        </div>
+      )}
     </div>
   );
 }

@@ -105,6 +105,53 @@ export type Database = {
           },
         ]
       }
+      candidature: {
+        Row: {
+          cognome: string
+          created_at: string
+          email: string
+          id: number
+          motivazione: string | null
+          nome: string
+          note_admin: string | null
+          sponsor_referral_code: string | null
+          stato: Database["public"]["Enums"]["stato_candidatura"]
+          telefono: string | null
+        }
+        Insert: {
+          cognome: string
+          created_at?: string
+          email: string
+          id?: number
+          motivazione?: string | null
+          nome: string
+          note_admin?: string | null
+          sponsor_referral_code?: string | null
+          stato?: Database["public"]["Enums"]["stato_candidatura"]
+          telefono?: string | null
+        }
+        Update: {
+          cognome?: string
+          created_at?: string
+          email?: string
+          id?: number
+          motivazione?: string | null
+          nome?: string
+          note_admin?: string | null
+          sponsor_referral_code?: string | null
+          stato?: Database["public"]["Enums"]["stato_candidatura"]
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidature_sponsor_referral_code_fkey"
+            columns: ["sponsor_referral_code"]
+            isOneToOne: false
+            referencedRelation: "consulenti"
+            referencedColumns: ["link_referral"]
+          },
+        ]
+      }
       cantina_personale: {
         Row: {
           data_aggiunta: string
@@ -1028,6 +1075,17 @@ export type Database = {
         }
         Returns: number
       }
+      candida_consulente: {
+        Args: {
+          p_cognome: string
+          p_email: string
+          p_motivazione: string
+          p_nome: string
+          p_referral_code: string
+          p_telefono: string
+        }
+        Returns: number
+      }
       crea_ordine_consulente: {
         Args: { p_cliente_id: number; p_righe: Json; p_tipo: string }
         Returns: number
@@ -1045,6 +1103,15 @@ export type Database = {
           telefono: string
           totale_speso: number
           ultimo_ordine: string
+        }[]
+      }
+      get_consulente_by_referral: {
+        Args: { p_code: string }
+        Returns: {
+          cognome: string
+          id: number
+          nome: string
+          status: string
         }[]
       }
       get_dashboard_consulente: {
@@ -1087,6 +1154,7 @@ export type Database = {
           status: string
         }[]
       }
+      set_referral_code: { Args: { p_code: string }; Returns: undefined }
     }
     Enums: {
       denominazione_vino: "DOP" | "DOCG" | "DOC" | "IGT"
@@ -1101,6 +1169,7 @@ export type Database = {
         | "sospeso"
         | "dormiente"
         | "cancellato"
+      stato_candidatura: "in_attesa" | "approvata" | "rifiutata"
       stato_cantina_personale: "IN_CANTINA" | "CONSUMATA" | "REGALATA"
       stato_funnel_lead:
         | "nuovo"
@@ -1289,6 +1358,7 @@ export const Constants = {
         "dormiente",
         "cancellato",
       ],
+      stato_candidatura: ["in_attesa", "approvata", "rifiutata"],
       stato_cantina_personale: ["IN_CANTINA", "CONSUMATA", "REGALATA"],
       stato_funnel_lead: [
         "nuovo",
