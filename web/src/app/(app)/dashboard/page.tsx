@@ -45,14 +45,32 @@ function CardValue({ children }: { children: React.ReactNode }) {
   );
 }
 
+function Row({ label, value, gold }: { label: string; value: string; gold?: boolean }) {
+  return (
+    <div className="flex justify-between text-xs" style={{ color: gold ? "var(--color-gold)" : "var(--color-muted)" }}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
+  );
+}
+
+type DashboardData = {
+  nome: string; cognome: string; status: string; status_max: string;
+  pv_min: number; gv_min: number; gv_prossimo: number;
+  pv_mese: number; gv_mese: number;
+  gv_l1: number; gv_l2: number; gv_l3: number; gv_l4: number;
+  gv_l5: number; gv_l6: number; gv_l7: number; gv_l8: number;
+  fatturato_mese: number; provvigione_pers: number;
+  guadagno_personale: number; reddito_residuale: number; guadagno_totale: number;
+};
+
 export default async function DashboardPage() {
-  const now   = new Date();
-  const anno  = now.getFullYear();
-  const mese  = now.getMonth() + 1;
+  const now  = new Date();
+  const anno = now.getFullYear();
+  const mese = now.getMonth() + 1;
 
   const supabase = await createClient();
 
-  // Recupera l'utente autenticato e il consulente collegato
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -81,28 +99,27 @@ export default async function DashboardPage() {
   if (error || !data) {
     return (
       <div className="p-6 text-sm" style={{ color: "var(--color-muted)" }}>
-        Errore nel caricamento dashboard: {error?.message ?? "nessun dato"}
+        Errore: {error?.message ?? "nessun dato"}
       </div>
     );
   }
 
-  const d = data as {
-    nome: string; cognome: string; status: string; status_max: string;
-    pv_min: number; gv_min: number; gv_prossimo: number;
-    pv_mese: number; gv_mese: number;
-    fatturato_mese: number; provvigione_pers: number;
-  };
+  const d = data as DashboardData;
 
-  const guadagniStimati = Number(d.fatturato_mese) * Number(d.provvigione_pers);
-  const pvMese          = Number(d.pv_mese);
-  const gvMese          = Number(d.gv_mese);
-  const pvMin           = Number(d.pv_min);
-  const gvProssimo      = Number(d.gv_prossimo);
-  const attivo          = pvMese >= pvMin;
+  const pvMese      = Number(d.pv_mese);
+  const gvMese      = Number(d.gv_mese);
+  const pvMin       = Number(d.pv_min);
+  const gvProssimo  = Number(d.gv_prossimo);
+  const attivo      = pvMese >= pvMin;
+  const percProv    = Math.round(Number(d.provvigione_pers) * 100);
+
+  // Livelli residuale con GV > 0 (per mostrare solo righe significative)
+  const livelliAttivi = [1,2,3,4,5,6,7,8].filter(
+    (l) => Number(d[`gv_l${l}` as keyof DashboardData]) > 0
+  );
 
   return (
     <div>
-      {/* Intestazione */}
       <div className="mb-6">
         <h1
           className="text-2xl font-bold"
@@ -116,7 +133,6 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* 4 card KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
         {/* Card 1 — PV mese */}
@@ -126,9 +142,7 @@ export default async function DashboardPage() {
           <ProgressBar value={pvMese} max={pvMin} />
           <div className="mt-2 flex justify-between text-xs" style={{ color: "var(--color-muted)" }}>
             <span>Min attività: {pvMin}</span>
-            <span>
-              {pvMin > 0 ? Math.round((pvMese / pvMin) * 100) : 0}%
-            </span>
+            <span>{pvMin > 0 ? Math.round((pvMese / pvMin) * 100) : 0}%</span>
           </div>
         </Card>
 
@@ -139,9 +153,7 @@ export default async function DashboardPage() {
           <ProgressBar value={gvMese} max={gvProssimo} />
           <div className="mt-2 flex justify-between text-xs" style={{ color: "var(--color-muted)" }}>
             <span>Obiettivo: {gvProssimo.toLocaleString("it-IT")}</span>
-            <span>
-              {gvProssimo > 0 ? Math.round((gvMese / gvProssimo) * 100) : 0}%
-            </span>
+            <span>{gvProssimo > 0 ? Math.round((gvMese / gvProssimo) * 100) : 0}%</span>
           </div>
         </Card>
 
@@ -156,32 +168,40 @@ export default async function DashboardPage() {
           </p>
           <div className="mt-3 space-y-1 text-xs" style={{ color: "var(--color-muted)" }}>
             <p>Status massimo: {d.status_max}</p>
-            <p>Min GV corrente: {Number(d.gv_min).toLocaleString("it-IT")}</p>
+            <p>GV minimo: {Number(d.gv_min).toLocaleString("it-IT")}</p>
             <p style={{ color: attivo ? "#22c55e" : "#ef4444" }}>
               {attivo ? "● Attivo questo mese" : "● Inattivo — PV insufficienti"}
             </p>
           </div>
         </Card>
 
-        {/* Card 4 — Guadagni stimati */}
+        {/* Card 4 — Guadagni */}
         <Card>
           <CardLabel>Guadagni stimati</CardLabel>
-          <CardValue>€ {guadagniStimati.toFixed(2)}</CardValue>
-          <div className="mt-3 space-y-1.5 text-xs" style={{ color: "var(--color-muted)" }}>
-            <div className="flex justify-between">
-              <span>Fatturato personale</span>
-              <span>€ {Number(d.fatturato_mese).toFixed(2)}</span>
-            </div>
+          <CardValue>€ {Number(d.guadagno_totale).toFixed(2)}</CardValue>
+          <div className="mt-3 space-y-1.5 text-xs">
+            <Row
+              label={`Provvigione pers. (${percProv}% × ${pvMese} PV)`}
+              value={`€ ${Number(d.guadagno_personale).toFixed(2)}`}
+            />
+            {livelliAttivi.length > 0 && (
+              <>
+                {livelliAttivi.map((l) => (
+                  <Row
+                    key={l}
+                    label={`Residuale L${l} (${Number(d[`gv_l${l}` as keyof DashboardData])} GV)`}
+                    value={`€ ${(Number(d[`gv_l${l}` as keyof DashboardData]) * Number(d.provvigione_pers)).toFixed(2)}`}
+                  />
+                ))}
+              </>
+            )}
             <div
-              className="flex justify-between pt-1.5"
+              className="flex justify-between pt-1.5 text-xs font-semibold"
               style={{ borderTop: "1px solid var(--color-border)", color: "var(--color-gold)" }}
             >
-              <span>Provvigione ({Math.round(Number(d.provvigione_pers) * 100)}%)</span>
-              <span>€ {guadagniStimati.toFixed(2)}</span>
+              <span>Totale</span>
+              <span>€ {Number(d.guadagno_totale).toFixed(2)}</span>
             </div>
-            <p className="text-xs pt-1" style={{ color: "var(--color-ash)", fontStyle: "italic" }}>
-              Reddito residuale: disponibile in Fase 1
-            </p>
           </div>
         </Card>
       </div>

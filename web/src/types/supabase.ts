@@ -1024,6 +1024,16 @@ export type Database = {
         Returns: {
           cognome: string
           fatturato_mese: number
+          guadagno_personale: number
+          guadagno_totale: number
+          gv_l1: number
+          gv_l2: number
+          gv_l3: number
+          gv_l4: number
+          gv_l5: number
+          gv_l6: number
+          gv_l7: number
+          gv_l8: number
           gv_mese: number
           gv_min: number
           gv_prossimo: number
@@ -1031,6 +1041,7 @@ export type Database = {
           provvigione_pers: number
           pv_mese: number
           pv_min: number
+          reddito_residuale: number
           status: string
           status_max: string
         }[]
