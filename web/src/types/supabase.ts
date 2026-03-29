@@ -1147,6 +1147,22 @@ export type Database = {
         Args: { p_cliente_id: number; p_righe: Json; p_tipo: string }
         Returns: number
       }
+      get_admin_consulenti: {
+        Args: { p_anno: number; p_mese: number }
+        Returns: {
+          attivo: boolean
+          cognome: string
+          data_iscrizione: string
+          gv_mese: number
+          id: number
+          nome: string
+          pv_mese: number
+          ruolo: string
+          sponsor_cognome: string
+          sponsor_nome: string
+          status: string
+        }[]
+      }
       get_admin_kpi: {
         Args: { p_anno: number; p_mese: number }
         Returns: {
