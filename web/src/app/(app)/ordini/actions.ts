@@ -27,7 +27,7 @@ export async function creaOrdine(
     .rpc("crea_ordine_consulente", {
       p_cliente_id: clienteId,
       p_tipo:       tipo,
-      p_righe:      JSON.stringify(righe),
+      p_righe:      righe,
     });
 
   if (error) return { success: false, error: error.message };
