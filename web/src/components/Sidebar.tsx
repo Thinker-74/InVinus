@@ -11,9 +11,10 @@ const NAV_ITEMS = [
   { href: "/catalogo",     label: "Catalogo" },
   { href: "/consulenti",   label: "Consulenti" },
   { href: "/clienti",      label: "Clienti" },
-  { href: "/ordini",       label: "Ordini" },
-  { href: "/provvigioni",  label: "Provvigioni" },
-  { href: "/eventi",       label: "Eventi" },
+  { href: "/ordini",             label: "Ordini" },
+  { href: "/provvigioni",        label: "Provvigioni" },
+  { href: "/referral/gestisci",  label: "Referral" },
+  { href: "/eventi",             label: "Eventi" },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {

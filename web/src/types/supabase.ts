@@ -305,12 +305,46 @@ export type Database = {
           },
         ]
       }
+      consulente_vini_preferiti: {
+        Row: {
+          consulente_id: number
+          ordine: number
+          prodotto_id: number
+        }
+        Insert: {
+          consulente_id: number
+          ordine?: number
+          prodotto_id: number
+        }
+        Update: {
+          consulente_id?: number
+          ordine?: number
+          prodotto_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consulente_vini_preferiti_consulente_id_fkey"
+            columns: ["consulente_id"]
+            isOneToOne: false
+            referencedRelation: "consulenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consulente_vini_preferiti_prodotto_id_fkey"
+            columns: ["prodotto_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consulenti: {
         Row: {
           approvato_da: number | null
           approvato_il: string | null
           attivo: boolean
           auth_user_id: string | null
+          bio: string | null
           codice_fiscale: string | null
           cognome: string
           created_at: string
@@ -318,11 +352,14 @@ export type Database = {
           data_ultimo_status_change: string | null
           email: string
           formazione_completata: boolean
+          foto_url: string | null
           gv_mese_corrente: number
           id: number
           link_referral: string | null
+          messaggio_referral: string | null
           nome: string
           pv_mese_corrente: number
+          specialita: string | null
           sponsor_id: number | null
           stato_account: Database["public"]["Enums"]["stato_account_consulente"]
           status: Database["public"]["Enums"]["status_consulente"]
@@ -335,6 +372,7 @@ export type Database = {
           approvato_il?: string | null
           attivo?: boolean
           auth_user_id?: string | null
+          bio?: string | null
           codice_fiscale?: string | null
           cognome: string
           created_at?: string
@@ -342,11 +380,14 @@ export type Database = {
           data_ultimo_status_change?: string | null
           email: string
           formazione_completata?: boolean
+          foto_url?: string | null
           gv_mese_corrente?: number
           id?: number
           link_referral?: string | null
+          messaggio_referral?: string | null
           nome: string
           pv_mese_corrente?: number
+          specialita?: string | null
           sponsor_id?: number | null
           stato_account?: Database["public"]["Enums"]["stato_account_consulente"]
           status?: Database["public"]["Enums"]["status_consulente"]
@@ -359,6 +400,7 @@ export type Database = {
           approvato_il?: string | null
           attivo?: boolean
           auth_user_id?: string | null
+          bio?: string | null
           codice_fiscale?: string | null
           cognome?: string
           created_at?: string
@@ -366,11 +408,14 @@ export type Database = {
           data_ultimo_status_change?: string | null
           email?: string
           formazione_completata?: boolean
+          foto_url?: string | null
           gv_mese_corrente?: number
           id?: number
           link_referral?: string | null
+          messaggio_referral?: string | null
           nome?: string
           pv_mese_corrente?: number
+          specialita?: string | null
           sponsor_id?: number | null
           stato_account?: Database["public"]["Enums"]["stato_account_consulente"]
           status?: Database["public"]["Enums"]["status_consulente"]
@@ -1066,6 +1111,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aggiorna_profilo_consulente: {
+        Args: {
+          p_bio: string
+          p_foto_url?: string
+          p_messaggio_referral: string
+          p_specialita: string
+        }
+        Returns: undefined
+      }
       aggiungi_cliente_consulente: {
         Args: {
           p_cognome: string
@@ -1108,9 +1162,13 @@ export type Database = {
       get_consulente_by_referral: {
         Args: { p_code: string }
         Returns: {
+          bio: string
           cognome: string
+          foto_url: string
           id: number
+          messaggio_referral: string
           nome: string
+          specialita: string
           status: string
         }[]
       }
@@ -1155,6 +1213,10 @@ export type Database = {
         }[]
       }
       set_referral_code: { Args: { p_code: string }; Returns: undefined }
+      set_vini_preferiti: {
+        Args: { p_prodotto_ids: number[] }
+        Returns: undefined
+      }
     }
     Enums: {
       denominazione_vino: "DOP" | "DOCG" | "DOC" | "IGT"

@@ -1,0 +1,1 @@
+“Leggi init-nuovo-progetto.md e segui le istruzioni per inizializzare questo progetto (struttura .claude/, CLAUDE.md, git, ecc.). Prima proponimi il piano dei passi che intendi eseguire, poi ti confermo.”
