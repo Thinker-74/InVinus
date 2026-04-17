@@ -147,7 +147,7 @@ export type Database = {
             foreignKeyName: "candidature_sponsor_referral_code_fkey"
             columns: ["sponsor_referral_code"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["link_referral"]
           },
         ]
@@ -255,13 +255,13 @@ export type Database = {
       clienti: {
         Row: {
           cognome: string
-          consulente_id: number | null
           created_at: string
           data_primo_acquisto: string | null
           email: string | null
           gdpr_consenso: boolean
           gdpr_data_consenso: string | null
           id: number
+          incaricato_id: number | null
           nome: string
           note: string | null
           segmento: string | null
@@ -269,13 +269,13 @@ export type Database = {
         }
         Insert: {
           cognome: string
-          consulente_id?: number | null
           created_at?: string
           data_primo_acquisto?: string | null
           email?: string | null
           gdpr_consenso?: boolean
           gdpr_data_consenso?: string | null
           id?: number
+          incaricato_id?: number | null
           nome: string
           note?: string | null
           segmento?: string | null
@@ -283,13 +283,13 @@ export type Database = {
         }
         Update: {
           cognome?: string
-          consulente_id?: number | null
           created_at?: string
           data_primo_acquisto?: string | null
           email?: string | null
           gdpr_consenso?: boolean
           gdpr_data_consenso?: string | null
           id?: number
+          incaricato_id?: number | null
           nome?: string
           note?: string | null
           segmento?: string | null
@@ -298,157 +298,19 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "clienti_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      consulente_vini_preferiti: {
-        Row: {
-          consulente_id: number
-          ordine: number
-          prodotto_id: number
-        }
-        Insert: {
-          consulente_id: number
-          ordine?: number
-          prodotto_id: number
-        }
-        Update: {
-          consulente_id?: number
-          ordine?: number
-          prodotto_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consulente_vini_preferiti_consulente_id_fkey"
-            columns: ["consulente_id"]
-            isOneToOne: false
-            referencedRelation: "consulenti"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consulente_vini_preferiti_prodotto_id_fkey"
-            columns: ["prodotto_id"]
-            isOneToOne: false
-            referencedRelation: "prodotti"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      consulenti: {
-        Row: {
-          approvato_da: number | null
-          approvato_il: string | null
-          attivo: boolean
-          auth_user_id: string | null
-          bio: string | null
-          codice_fiscale: string | null
-          cognome: string
-          created_at: string
-          data_iscrizione: string
-          data_ultimo_status_change: string | null
-          email: string
-          formazione_completata: boolean
-          foto_url: string | null
-          gv_mese_corrente: number
-          id: number
-          link_referral: string | null
-          messaggio_referral: string | null
-          nome: string
-          pv_mese_corrente: number
-          ruolo: Database["public"]["Enums"]["ruolo_consulente"]
-          specialita: string | null
-          sponsor_id: number | null
-          stato_account: Database["public"]["Enums"]["stato_account_consulente"]
-          status: Database["public"]["Enums"]["status_consulente"]
-          status_max: Database["public"]["Enums"]["status_consulente"]
-          stripe_account_id: string | null
-          telefono: string | null
-        }
-        Insert: {
-          approvato_da?: number | null
-          approvato_il?: string | null
-          attivo?: boolean
-          auth_user_id?: string | null
-          bio?: string | null
-          codice_fiscale?: string | null
-          cognome: string
-          created_at?: string
-          data_iscrizione?: string
-          data_ultimo_status_change?: string | null
-          email: string
-          formazione_completata?: boolean
-          foto_url?: string | null
-          gv_mese_corrente?: number
-          id?: number
-          link_referral?: string | null
-          messaggio_referral?: string | null
-          nome: string
-          pv_mese_corrente?: number
-          ruolo?: Database["public"]["Enums"]["ruolo_consulente"]
-          specialita?: string | null
-          sponsor_id?: number | null
-          stato_account?: Database["public"]["Enums"]["stato_account_consulente"]
-          status?: Database["public"]["Enums"]["status_consulente"]
-          status_max?: Database["public"]["Enums"]["status_consulente"]
-          stripe_account_id?: string | null
-          telefono?: string | null
-        }
-        Update: {
-          approvato_da?: number | null
-          approvato_il?: string | null
-          attivo?: boolean
-          auth_user_id?: string | null
-          bio?: string | null
-          codice_fiscale?: string | null
-          cognome?: string
-          created_at?: string
-          data_iscrizione?: string
-          data_ultimo_status_change?: string | null
-          email?: string
-          formazione_completata?: boolean
-          foto_url?: string | null
-          gv_mese_corrente?: number
-          id?: number
-          link_referral?: string | null
-          messaggio_referral?: string | null
-          nome?: string
-          pv_mese_corrente?: number
-          ruolo?: Database["public"]["Enums"]["ruolo_consulente"]
-          specialita?: string | null
-          sponsor_id?: number | null
-          stato_account?: Database["public"]["Enums"]["stato_account_consulente"]
-          status?: Database["public"]["Enums"]["status_consulente"]
-          status_max?: Database["public"]["Enums"]["status_consulente"]
-          stripe_account_id?: string | null
-          telefono?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consulenti_approvato_da_fkey"
-            columns: ["approvato_da"]
-            isOneToOne: false
-            referencedRelation: "consulenti"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consulenti_sponsor_id_fkey"
-            columns: ["sponsor_id"]
-            isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
         ]
       }
       eventi: {
         Row: {
-          consulente_id: number
           created_at: string
           data: string
           id: number
+          incaricato_id: number
           luogo: string | null
           note: string | null
           partecipanti_effettivi: number | null
@@ -456,10 +318,10 @@ export type Database = {
           tipo: Database["public"]["Enums"]["tipo_evento"]
         }
         Insert: {
-          consulente_id: number
           created_at?: string
           data: string
           id?: number
+          incaricato_id: number
           luogo?: string | null
           note?: string | null
           partecipanti_effettivi?: number | null
@@ -467,10 +329,10 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["tipo_evento"]
         }
         Update: {
-          consulente_id?: number
           created_at?: string
           data?: string
           id?: number
+          incaricato_id?: number
           luogo?: string | null
           note?: string | null
           partecipanti_effettivi?: number | null
@@ -480,9 +342,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "eventi_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
         ]
@@ -529,32 +391,170 @@ export type Database = {
           },
         ]
       }
+      incaricati: {
+        Row: {
+          approvato_da: number | null
+          approvato_il: string | null
+          attivo: boolean
+          auth_user_id: string | null
+          bio: string | null
+          codice_fiscale: string | null
+          cognome: string
+          created_at: string
+          data_iscrizione: string
+          data_ultimo_status_change: string | null
+          email: string
+          formazione_completata: boolean
+          foto_url: string | null
+          gv_mese_corrente: number
+          id: number
+          link_referral: string | null
+          messaggio_referral: string | null
+          nome: string
+          pv_mese_corrente: number
+          ruolo: Database["public"]["Enums"]["ruolo_utente"]
+          specialita: string | null
+          sponsor_id: number | null
+          stato_account: Database["public"]["Enums"]["stato_account_incaricato"]
+          status: Database["public"]["Enums"]["status_incaricato"]
+          status_max: Database["public"]["Enums"]["status_incaricato"]
+          stripe_account_id: string | null
+          telefono: string | null
+        }
+        Insert: {
+          approvato_da?: number | null
+          approvato_il?: string | null
+          attivo?: boolean
+          auth_user_id?: string | null
+          bio?: string | null
+          codice_fiscale?: string | null
+          cognome: string
+          created_at?: string
+          data_iscrizione?: string
+          data_ultimo_status_change?: string | null
+          email: string
+          formazione_completata?: boolean
+          foto_url?: string | null
+          gv_mese_corrente?: number
+          id?: number
+          link_referral?: string | null
+          messaggio_referral?: string | null
+          nome: string
+          pv_mese_corrente?: number
+          ruolo?: Database["public"]["Enums"]["ruolo_utente"]
+          specialita?: string | null
+          sponsor_id?: number | null
+          stato_account?: Database["public"]["Enums"]["stato_account_incaricato"]
+          status?: Database["public"]["Enums"]["status_incaricato"]
+          status_max?: Database["public"]["Enums"]["status_incaricato"]
+          stripe_account_id?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          approvato_da?: number | null
+          approvato_il?: string | null
+          attivo?: boolean
+          auth_user_id?: string | null
+          bio?: string | null
+          codice_fiscale?: string | null
+          cognome?: string
+          created_at?: string
+          data_iscrizione?: string
+          data_ultimo_status_change?: string | null
+          email?: string
+          formazione_completata?: boolean
+          foto_url?: string | null
+          gv_mese_corrente?: number
+          id?: number
+          link_referral?: string | null
+          messaggio_referral?: string | null
+          nome?: string
+          pv_mese_corrente?: number
+          ruolo?: Database["public"]["Enums"]["ruolo_utente"]
+          specialita?: string | null
+          sponsor_id?: number | null
+          stato_account?: Database["public"]["Enums"]["stato_account_incaricato"]
+          status?: Database["public"]["Enums"]["status_incaricato"]
+          status_max?: Database["public"]["Enums"]["status_incaricato"]
+          stripe_account_id?: string | null
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consulenti_approvato_da_fkey"
+            columns: ["approvato_da"]
+            isOneToOne: false
+            referencedRelation: "incaricati"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consulenti_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "incaricati"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incaricato_vini_preferiti: {
+        Row: {
+          incaricato_id: number
+          ordine: number
+          prodotto_id: number
+        }
+        Insert: {
+          incaricato_id: number
+          ordine?: number
+          prodotto_id: number
+        }
+        Update: {
+          incaricato_id?: number
+          ordine?: number
+          prodotto_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consulente_vini_preferiti_consulente_id_fkey"
+            columns: ["incaricato_id"]
+            isOneToOne: false
+            referencedRelation: "incaricati"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consulente_vini_preferiti_prodotto_id_fkey"
+            columns: ["prodotto_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interazioni_crm: {
         Row: {
-          consulente_id: number
           data: string
           esito: string | null
           id: number
+          incaricato_id: number
           note: string | null
           soggetto_id: number
           tipo_interazione: string
           tipo_soggetto: string
         }
         Insert: {
-          consulente_id: number
           data?: string
           esito?: string | null
           id?: number
+          incaricato_id: number
           note?: string | null
           soggetto_id: number
           tipo_interazione: string
           tipo_soggetto: string
         }
         Update: {
-          consulente_id?: number
           data?: string
           esito?: string | null
           id?: number
+          incaricato_id?: number
           note?: string | null
           soggetto_id?: number
           tipo_interazione?: string
@@ -563,9 +563,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "interazioni_crm_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
         ]
@@ -573,14 +573,14 @@ export type Database = {
       lead: {
         Row: {
           cognome: string | null
-          consulente_id: number | null
           convertito_cliente_id: number | null
-          convertito_consulente_id: number | null
+          convertito_incaricato_id: number | null
           created_at: string
           data_contatto: string
           email: string | null
           fonte: string | null
           id: number
+          incaricato_id: number | null
           nome: string | null
           note: string | null
           stato_funnel: Database["public"]["Enums"]["stato_funnel_lead"]
@@ -588,14 +588,14 @@ export type Database = {
         }
         Insert: {
           cognome?: string | null
-          consulente_id?: number | null
           convertito_cliente_id?: number | null
-          convertito_consulente_id?: number | null
+          convertito_incaricato_id?: number | null
           created_at?: string
           data_contatto?: string
           email?: string | null
           fonte?: string | null
           id?: number
+          incaricato_id?: number | null
           nome?: string | null
           note?: string | null
           stato_funnel?: Database["public"]["Enums"]["stato_funnel_lead"]
@@ -603,14 +603,14 @@ export type Database = {
         }
         Update: {
           cognome?: string | null
-          consulente_id?: number | null
           convertito_cliente_id?: number | null
-          convertito_consulente_id?: number | null
+          convertito_incaricato_id?: number | null
           created_at?: string
           data_contatto?: string
           email?: string | null
           fonte?: string | null
           id?: number
+          incaricato_id?: number | null
           nome?: string | null
           note?: string | null
           stato_funnel?: Database["public"]["Enums"]["stato_funnel_lead"]
@@ -619,9 +619,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lead_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
           {
@@ -633,39 +633,39 @@ export type Database = {
           },
           {
             foreignKeyName: "lead_convertito_consulente_id_fkey"
-            columns: ["convertito_consulente_id"]
+            columns: ["convertito_incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
         ]
       }
       magazzino_consulente: {
         Row: {
-          consulente_id: number
           data_ultima_uscita: string | null
           data_ultimo_carico: string | null
           id: number
+          incaricato_id: number
           prodotto_id: number
           quantita_disponibile: number
           quantita_riservata: number
           scorta_minima: number
         }
         Insert: {
-          consulente_id: number
           data_ultima_uscita?: string | null
           data_ultimo_carico?: string | null
           id?: number
+          incaricato_id: number
           prodotto_id: number
           quantita_disponibile?: number
           quantita_riservata?: number
           scorta_minima?: number
         }
         Update: {
-          consulente_id?: number
           data_ultima_uscita?: string | null
           data_ultimo_carico?: string | null
           id?: number
+          incaricato_id?: number
           prodotto_id?: number
           quantita_disponibile?: number
           quantita_riservata?: number
@@ -674,9 +674,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "magazzino_consulente_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
           {
@@ -735,10 +735,10 @@ export type Database = {
       ordini: {
         Row: {
           cliente_id: number | null
-          consulente_id: number
           created_at: string
           data: string
           id: number
+          incaricato_id: number
           indirizzo_spedizione: string | null
           note: string | null
           pv_generati: number
@@ -751,10 +751,10 @@ export type Database = {
         }
         Insert: {
           cliente_id?: number | null
-          consulente_id: number
           created_at?: string
           data?: string
           id?: number
+          incaricato_id: number
           indirizzo_spedizione?: string | null
           note?: string | null
           pv_generati?: number
@@ -767,10 +767,10 @@ export type Database = {
         }
         Update: {
           cliente_id?: number | null
-          consulente_id?: number
           created_at?: string
           data?: string
           id?: number
+          incaricato_id?: number
           indirizzo_spedizione?: string | null
           note?: string | null
           pv_generati?: number
@@ -791,9 +791,9 @@ export type Database = {
           },
           {
             foreignKeyName: "ordini_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
         ]
@@ -923,68 +923,68 @@ export type Database = {
           anno: number
           bonus_car: number
           cab_bonus: number
-          consulente_id: number
           data_calcolo: string
           data_pagamento: string | null
           era_attivo: boolean
           global_pool: number
           gv_mese: number
           id: number
+          incaricato_id: number
           mese: number
           provvigione_personale: number
           pv_mese: number
           reddito_residuale: number
           residuale_dettaglio: Json | null
           stato: Database["public"]["Enums"]["stato_pagamento_prov"]
-          status_al_calcolo: Database["public"]["Enums"]["status_consulente"]
+          status_al_calcolo: Database["public"]["Enums"]["status_incaricato"]
           totale: number
         }
         Insert: {
           anno: number
           bonus_car?: number
           cab_bonus?: number
-          consulente_id: number
           data_calcolo?: string
           data_pagamento?: string | null
           era_attivo?: boolean
           global_pool?: number
           gv_mese?: number
           id?: number
+          incaricato_id: number
           mese: number
           provvigione_personale?: number
           pv_mese?: number
           reddito_residuale?: number
           residuale_dettaglio?: Json | null
           stato?: Database["public"]["Enums"]["stato_pagamento_prov"]
-          status_al_calcolo: Database["public"]["Enums"]["status_consulente"]
+          status_al_calcolo: Database["public"]["Enums"]["status_incaricato"]
           totale?: number
         }
         Update: {
           anno?: number
           bonus_car?: number
           cab_bonus?: number
-          consulente_id?: number
           data_calcolo?: string
           data_pagamento?: string | null
           era_attivo?: boolean
           global_pool?: number
           gv_mese?: number
           id?: number
+          incaricato_id?: number
           mese?: number
           provvigione_personale?: number
           pv_mese?: number
           reddito_residuale?: number
           residuale_dettaglio?: Json | null
           stato?: Database["public"]["Enums"]["stato_pagamento_prov"]
-          status_al_calcolo?: Database["public"]["Enums"]["status_consulente"]
+          status_al_calcolo?: Database["public"]["Enums"]["status_incaricato"]
           totale?: number
         }
         Relationships: [
           {
             foreignKeyName: "provvigioni_mensili_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
         ]
@@ -1005,7 +1005,7 @@ export type Database = {
           residuale_l6: number
           residuale_l7: number
           residuale_l8: number
-          status: Database["public"]["Enums"]["status_consulente"]
+          status: Database["public"]["Enums"]["status_incaricato"]
         }
         Insert: {
           cab_importo?: number
@@ -1022,7 +1022,7 @@ export type Database = {
           residuale_l6?: number
           residuale_l7?: number
           residuale_l8?: number
-          status: Database["public"]["Enums"]["status_consulente"]
+          status: Database["public"]["Enums"]["status_incaricato"]
         }
         Update: {
           cab_importo?: number
@@ -1039,7 +1039,7 @@ export type Database = {
           residuale_l6?: number
           residuale_l7?: number
           residuale_l8?: number
-          status?: Database["public"]["Enums"]["status_consulente"]
+          status?: Database["public"]["Enums"]["status_incaricato"]
         }
         Relationships: []
       }
@@ -1061,9 +1061,9 @@ export type Database = {
       storni_pv: {
         Row: {
           anno: number
-          consulente_id: number
           created_at: string
           id: number
+          incaricato_id: number
           mese: number
           motivo: Database["public"]["Enums"]["motivo_storno"]
           note: string | null
@@ -1072,9 +1072,9 @@ export type Database = {
         }
         Insert: {
           anno: number
-          consulente_id: number
           created_at?: string
           id?: number
+          incaricato_id: number
           mese: number
           motivo: Database["public"]["Enums"]["motivo_storno"]
           note?: string | null
@@ -1083,9 +1083,9 @@ export type Database = {
         }
         Update: {
           anno?: number
-          consulente_id?: number
           created_at?: string
           id?: number
+          incaricato_id?: number
           mese?: number
           motivo?: Database["public"]["Enums"]["motivo_storno"]
           note?: string | null
@@ -1095,9 +1095,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "storni_pv_consulente_id_fkey"
-            columns: ["consulente_id"]
+            columns: ["incaricato_id"]
             isOneToOne: false
-            referencedRelation: "consulenti"
+            referencedRelation: "incaricati"
             referencedColumns: ["id"]
           },
           {
@@ -1114,7 +1114,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      aggiorna_profilo_consulente: {
+      aggiorna_profilo_incaricato: {
         Args: {
           p_bio: string
           p_foto_url?: string
@@ -1123,7 +1123,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      aggiungi_cliente_consulente: {
+      aggiungi_cliente_incaricato: {
         Args: {
           p_cognome: string
           p_email: string
@@ -1132,7 +1132,7 @@ export type Database = {
         }
         Returns: number
       }
-      candida_consulente: {
+      candida_incaricato: {
         Args: {
           p_cognome: string
           p_email: string
@@ -1143,11 +1143,11 @@ export type Database = {
         }
         Returns: number
       }
-      crea_ordine_consulente: {
+      crea_ordine_incaricato: {
         Args: { p_cliente_id: number; p_righe: Json; p_tipo: string }
         Returns: number
       }
-      get_admin_consulenti: {
+      get_admin_incaricati: {
         Args: { p_anno: number; p_mese: number }
         Returns: {
           attivo: boolean
@@ -1166,13 +1166,13 @@ export type Database = {
       get_admin_kpi: {
         Args: { p_anno: number; p_mese: number }
         Returns: {
-          consulenti_attivi: number
           fatturato_mese: number
+          incaricati_attivi: number
           nuovi_iscritti: number
           ordini_mese: number
         }[]
       }
-      get_admin_top_consulenti: {
+      get_admin_top_incaricati: {
         Args: { p_anno: number; p_limit?: number; p_mese: number }
         Returns: {
           cognome: string
@@ -1191,8 +1191,8 @@ export type Database = {
           n_ordini: number
         }[]
       }
-      get_clienti_consulente: {
-        Args: { p_consulente_id: number }
+      get_clienti_incaricato: {
+        Args: { p_incaricato_id: number }
         Returns: {
           cognome: string
           data_primo_acquisto: string
@@ -1206,21 +1206,8 @@ export type Database = {
           ultimo_ordine: string
         }[]
       }
-      get_consulente_by_referral: {
-        Args: { p_code: string }
-        Returns: {
-          bio: string
-          cognome: string
-          foto_url: string
-          id: number
-          messaggio_referral: string
-          nome: string
-          specialita: string
-          status: string
-        }[]
-      }
-      get_dashboard_consulente: {
-        Args: { p_anno: number; p_consulente_id: number; p_mese: number }
+      get_dashboard_incaricato: {
+        Args: { p_anno: number; p_incaricato_id: number; p_mese: number }
         Returns: {
           cognome: string
           fatturato_mese: number
@@ -1246,8 +1233,21 @@ export type Database = {
           status_max: string
         }[]
       }
-      get_team_consulente: {
-        Args: { p_anno: number; p_consulente_id: number; p_mese: number }
+      get_incaricato_by_referral: {
+        Args: { p_code: string }
+        Returns: {
+          bio: string
+          cognome: string
+          foto_url: string
+          id: number
+          messaggio_referral: string
+          nome: string
+          specialita: string
+          status: string
+        }[]
+      }
+      get_team_incaricato: {
+        Args: { p_anno: number; p_incaricato_id: number; p_mese: number }
         Returns: {
           cognome: string
           id: number
@@ -1273,8 +1273,8 @@ export type Database = {
         | "CAMPIONE_GRATUITO"
         | "OMAGGIO_PROMO"
         | "STARTER_KIT"
-      ruolo_consulente: "consulente" | "admin"
-      stato_account_consulente:
+      ruolo_utente: "incaricato" | "admin"
+      stato_account_incaricato:
         | "attivo"
         | "sospeso"
         | "dormiente"
@@ -1287,7 +1287,7 @@ export type Database = {
         | "invitato_serata"
         | "partecipato_serata"
         | "cliente"
-        | "consulente"
+        | "incaricato"
         | "perso"
       stato_ordine:
         | "nuovo"
@@ -1299,7 +1299,7 @@ export type Database = {
         | "reso"
       stato_pagamento_prov: "calcolato" | "approvato" | "pagato" | "sospeso"
       stato_partecipante: "invitato" | "confermato" | "presente" | "assente"
-      status_consulente:
+      status_incaricato:
         | "STARTER"
         | "APPRENTICE"
         | "ADVISOR"
@@ -1462,8 +1462,8 @@ export const Constants = {
         "OMAGGIO_PROMO",
         "STARTER_KIT",
       ],
-      ruolo_consulente: ["consulente", "admin"],
-      stato_account_consulente: [
+      ruolo_utente: ["incaricato", "admin"],
+      stato_account_incaricato: [
         "attivo",
         "sospeso",
         "dormiente",
@@ -1477,7 +1477,7 @@ export const Constants = {
         "invitato_serata",
         "partecipato_serata",
         "cliente",
-        "consulente",
+        "incaricato",
         "perso",
       ],
       stato_ordine: [
@@ -1491,7 +1491,7 @@ export const Constants = {
       ],
       stato_pagamento_prov: ["calcolato", "approvato", "pagato", "sospeso"],
       stato_partecipante: ["invitato", "confermato", "presente", "assente"],
-      status_consulente: [
+      status_incaricato: [
         "STARTER",
         "APPRENTICE",
         "ADVISOR",

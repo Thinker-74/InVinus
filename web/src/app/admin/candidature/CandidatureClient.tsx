@@ -38,11 +38,11 @@ function CandidaturaCard({ c, onUpdate }: { c: Candidatura; onUpdate: () => void
       // Trova sponsor_id dal referral code
       let sponsorId: number | null = null;
       if (c.sponsor_referral_code) {
-        const { data } = await supabase.rpc("get_consulente_by_referral", { p_code: c.sponsor_referral_code });
+        const { data } = await supabase.rpc("get_incaricato_by_referral", { p_code: c.sponsor_referral_code });
         sponsorId = data?.[0]?.id ?? null;
       }
-      // Crea consulente con status STARTER
-      const { error } = await supabase.from("consulenti").insert({
+      // Crea incaricato con status STARTER
+      const { error } = await supabase.from("incaricati").insert({
         nome:            c.nome,
         cognome:         c.cognome,
         email:           c.email,
@@ -161,7 +161,7 @@ function CandidaturaCard({ c, onUpdate }: { c: Candidatura; onUpdate: () => void
                   className="flex-1 rounded-lg py-2 text-sm font-semibold"
                   style={{ backgroundColor: isPending ? "var(--color-ash)" : "#22c55e", color: "var(--color-ink)", cursor: isPending ? "not-allowed" : "pointer" }}
                 >
-                  {isPending ? "..." : "Approva → crea consulente"}
+                  {isPending ? "..." : "Approva → crea incaricato"}
                 </button>
               </div>
             </div>

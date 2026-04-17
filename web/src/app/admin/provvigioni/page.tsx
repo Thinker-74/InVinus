@@ -14,7 +14,7 @@ const STATO_COLOR: Record<string, string> = {
 
 type Riga = {
   id: number;
-  consulente_id: number;
+  incaricato_id: number;
   anno: number;
   mese: number;
   pv_mese: number;
@@ -49,17 +49,17 @@ export default function AdminProvvigioniPage() {
     const supabase = createClient();
     const { data } = await supabase
       .from("provvigioni_mensili")
-      .select(`id, consulente_id, anno, mese, pv_mese, gv_mese, provvigione_personale,
+      .select(`id, incaricato_id, anno, mese, pv_mese, gv_mese, provvigione_personale,
                reddito_residuale, cab_bonus, bonus_car, global_pool, totale, stato,
                era_attivo, status_al_calcolo,
-               consulenti(nome, cognome)`)
+               incaricati(nome, cognome)`)
       .eq("anno", a)
       .eq("mese", m)
       .order("totale", { ascending: false });
     const mapped = (data ?? []).map((r: Record<string, unknown>) => ({
       ...(r as Omit<Riga, "nome" | "cognome">),
-      nome: (r.consulenti as { nome: string } | null)?.nome,
-      cognome: (r.consulenti as { cognome: string } | null)?.cognome,
+      nome: (r.incaricati as { nome: string } | null)?.nome,
+      cognome: (r.incaricati as { cognome: string } | null)?.cognome,
     }));
     setRighe(mapped as Riga[]);
     setLoading(false);
@@ -77,7 +77,7 @@ export default function AdminProvvigioniPage() {
       });
       const json = await res.json();
       if (!res.ok) { setMsg(`Errore: ${json.error}`); return; }
-      setMsg(`Calcolato: ${json.consulentiAttivi} attivi, ${json.consulentiInattivi} inattivi — totale ${euro(json.totaleLordo)}`);
+      setMsg(`Calcolato: ${json.incaricatiAttivi} attivi, ${json.incaricatiInattivi} inattivi — totale ${euro(json.totaleLordo)}`);
       caricaDati(anno, mese);
     });
   }
@@ -170,7 +170,7 @@ export default function AdminProvvigioniPage() {
       {righe.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            ["Consulenti",    String(righe.length)],
+            ["Incaricati",    String(righe.length)],
             ["Attivi",        String(righe.filter((r) => r.era_attivo).length)],
             ["Totale lordo",  euro(totaleCalcolato)],
           ].map(([label, value]) => (
@@ -200,7 +200,7 @@ export default function AdminProvvigioniPage() {
           {/* Header */}
           <div className="hidden lg:grid gap-2 px-4 py-2 text-xs font-medium"
             style={{ gridTemplateColumns: "1fr 5rem 4rem 4rem 1fr 1fr 1fr 1fr 5rem", backgroundColor: "var(--color-ash)", color: "var(--color-muted)" }}>
-            <span>Consulente</span>
+            <span>Incaricato</span>
             <span>Status</span>
             <span className="text-right">PV</span>
             <span className="text-right">GV</span>

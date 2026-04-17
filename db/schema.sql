@@ -2,6 +2,7 @@
 -- InVinus — Schema PostgreSQL completo + Seed dati catalogo
 -- Generato da: docs/01..12 (business overview, catalogo, compensation plan,
 --              requisiti tech, flussi, cantina/magazzino, edge cases)
+-- Aggiornato M1.5 (2026-04-17): rename consulente → incaricato
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -16,7 +17,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;  -- per full-text sear
 -- ENUM TYPES
 -- ---------------------------------------------------------------------------
 
-CREATE TYPE status_consulente AS ENUM (
+CREATE TYPE status_incaricato AS ENUM (
   'STARTER',
   'APPRENTICE',
   'ADVISOR',
@@ -49,7 +50,7 @@ CREATE TYPE stato_funnel_lead AS ENUM (
   'invitato_serata',
   'partecipato_serata',
   'cliente',
-  'consulente',
+  'incaricato',
   'perso'
 );
 
@@ -74,7 +75,7 @@ CREATE TYPE stato_pagamento_prov AS ENUM (
   'sospeso'
 );
 
-CREATE TYPE stato_account_consulente AS ENUM (
+CREATE TYPE stato_account_incaricato AS ENUM (
   'attivo',
   'sospeso',
   'dormiente',   -- inattivo da 12+ mesi (doc 12 §3)
@@ -104,11 +105,11 @@ CREATE TYPE stato_cantina_personale AS ENUM ('IN_CANTINA', 'CONSUMATA', 'REGALAT
 
 CREATE TYPE motivo_storno AS ENUM ('reso_14gg', 'reso_goodwill', 'annullamento');
 
--- Stati del processo di candidatura a consulente (form /ref/[code])
+-- Stati del processo di candidatura a incaricato (form /ref/[code])
 CREATE TYPE stato_candidatura AS ENUM ('in_attesa', 'approvata', 'rifiutata');
 
--- Ruolo per controllo accessi: distingue consulenti standard da amministratori
-CREATE TYPE ruolo_consulente AS ENUM ('consulente', 'admin');
+-- Ruolo per controllo accessi: distingue incaricati standard da amministratori
+CREATE TYPE ruolo_utente AS ENUM ('incaricato', 'admin');
 
 
 -- =============================================================================
@@ -154,7 +155,7 @@ CREATE TABLE prodotti (
   temp_servizio_min     SMALLINT NOT NULL,
   temp_servizio_max     SMALLINT NOT NULL,
   prezzo_pubblico       DECIMAL(8,2) NOT NULL,
-  prezzo_consulente     DECIMAL(8,2) NOT NULL,                 -- prezzo acquisto consulente
+  prezzo_consulente     DECIMAL(8,2) NOT NULL,                 -- prezzo acquisto incaricato
   costo_fornitore       DECIMAL(8,2),                         -- confidenziale, solo admin
   pv_valore             INT NOT NULL DEFAULT 0,               -- PV per bottiglia venduta
   scheda_narrativa      TEXT,
@@ -172,7 +173,7 @@ CREATE TABLE prodotti (
 -- Ordinamento enum = ordinamento carriera, quindi >= funziona correttamente
 -- ---------------------------------------------------------------------------
 CREATE TABLE qualifiche (
-  status               status_consulente PRIMARY KEY,
+  status               status_incaricato PRIMARY KEY,
   pv_min               INT NOT NULL DEFAULT 0,
   gv_min               INT NOT NULL DEFAULT 0,
   provvigione_pers     DECIMAL(5,4) NOT NULL DEFAULT 0.15,
@@ -184,34 +185,34 @@ CREATE TABLE qualifiche (
   residuale_l6         DECIMAL(5,4) NOT NULL DEFAULT 0,
   residuale_l7         DECIMAL(5,4) NOT NULL DEFAULT 0,
   residuale_l8         DECIMAL(5,4) NOT NULL DEFAULT 0,
-  cab_importo          DECIMAL(6,2) NOT NULL DEFAULT 0,        -- €/consulente attivo
+  cab_importo          DECIMAL(6,2) NOT NULL DEFAULT 0,        -- €/incaricato attivo
   ha_bonus_car         BOOLEAN NOT NULL DEFAULT FALSE,
   ha_global_pool       BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- ---------------------------------------------------------------------------
--- Consulenti — anagrafica + albero genealogico (auto-join sponsor_id)
+-- Incaricati — anagrafica + albero genealogico (auto-join sponsor_id)
 -- ---------------------------------------------------------------------------
-CREATE TABLE consulenti (
+CREATE TABLE incaricati (
   id                        SERIAL PRIMARY KEY,
   nome                      VARCHAR(100) NOT NULL,
   cognome                   VARCHAR(100) NOT NULL,
   email                     VARCHAR(200) NOT NULL UNIQUE,
   telefono                  VARCHAR(20),
   codice_fiscale            VARCHAR(16) UNIQUE,                -- unicità: 1 persona = 1 account
-  sponsor_id                INT REFERENCES consulenti(id),     -- NULL = top of tree
-  status                    status_consulente NOT NULL DEFAULT 'STARTER',
-  status_max                status_consulente NOT NULL DEFAULT 'STARTER',  -- non retrocede mai
+  sponsor_id                INT REFERENCES incaricati(id),    -- NULL = top of tree
+  status                    status_incaricato NOT NULL DEFAULT 'STARTER',
+  status_max                status_incaricato NOT NULL DEFAULT 'STARTER',  -- non retrocede mai
   pv_mese_corrente          DECIMAL(10,2) NOT NULL DEFAULT 0,
   gv_mese_corrente          DECIMAL(10,2) NOT NULL DEFAULT 0,
   attivo                    BOOLEAN NOT NULL DEFAULT TRUE,      -- soddisfa PV requisito mensile
   formazione_completata     BOOLEAN NOT NULL DEFAULT FALSE,    -- intermezzo TEAM_COORD→MANAGER
   link_referral             VARCHAR(100) UNIQUE,
   stripe_account_id         VARCHAR(100),
-  stato_account             stato_account_consulente NOT NULL DEFAULT 'attivo',
+  stato_account             stato_account_incaricato NOT NULL DEFAULT 'attivo',
   data_iscrizione           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   data_ultimo_status_change TIMESTAMPTZ,
-  approvato_da              INT REFERENCES consulenti(id),
+  approvato_da              INT REFERENCES incaricati(id),
   approvato_il              TIMESTAMPTZ,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   -- Collegamento a Supabase Auth (aggiunto ~2026-03 per autenticazione)
@@ -222,7 +223,7 @@ CREATE TABLE consulenti (
   messaggio_referral        VARCHAR(500),
   specialita                VARCHAR(200),
   -- Ruolo per controllo accessi /admin/* (aggiunto ~2026-03)
-  ruolo                     ruolo_consulente NOT NULL DEFAULT 'consulente',
+  ruolo                     ruolo_utente NOT NULL DEFAULT 'incaricato',
   -- status_max non può essere inferiore a status corrente
   CONSTRAINT chk_status_max CHECK (status_max >= status)
 );
@@ -236,7 +237,7 @@ CREATE TABLE clienti (
   cognome              VARCHAR(100) NOT NULL,
   email                VARCHAR(200) UNIQUE,
   telefono             VARCHAR(20),
-  consulente_id        INT REFERENCES consulenti(id),
+  incaricato_id        INT REFERENCES incaricati(id),
   data_primo_acquisto  TIMESTAMPTZ,
   segmento             VARCHAR(50),                            -- wine_lover, horeca, regalo
   note                 TEXT,
@@ -246,8 +247,8 @@ CREATE TABLE clienti (
 );
 
 -- ---------------------------------------------------------------------------
--- Candidature — richieste di iscrizione come consulente (form /ref/[code])
--- Approvazione manuale admin → crea record in consulenti (no trigger automatico)
+-- Candidature — richieste di iscrizione come incaricato (form /ref/[code])
+-- Approvazione manuale admin → crea record in incaricati (no trigger automatico)
 -- ---------------------------------------------------------------------------
 CREATE TABLE candidature (
   id                    SERIAL PRIMARY KEY,
@@ -256,25 +257,25 @@ CREATE TABLE candidature (
   email                 VARCHAR(200) NOT NULL,       -- senza UNIQUE: duplicati possibili (scelta intenzionale)
   telefono              VARCHAR(20),
   motivazione           TEXT,
-  sponsor_referral_code VARCHAR(100) REFERENCES consulenti(link_referral) ON UPDATE CASCADE,
+  sponsor_referral_code VARCHAR(100) REFERENCES incaricati(link_referral) ON UPDATE CASCADE,
   stato                 stato_candidatura NOT NULL DEFAULT 'in_attesa',
   note_admin            TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ---------------------------------------------------------------------------
--- Vini preferiti consulente — selezione per landing referral personalizzata
--- PK composita: un consulente ha al massimo un record per vino
+-- Vini preferiti incaricato — selezione per landing referral personalizzata
+-- PK composita: un incaricato ha al massimo un record per vino
 -- ---------------------------------------------------------------------------
-CREATE TABLE consulente_vini_preferiti (
-  consulente_id INT NOT NULL REFERENCES consulenti(id) ON DELETE CASCADE,
+CREATE TABLE incaricato_vini_preferiti (
+  incaricato_id INT NOT NULL REFERENCES incaricati(id) ON DELETE CASCADE,
   prodotto_id   INT NOT NULL REFERENCES prodotti(id)   ON DELETE CASCADE,
   ordine        SMALLINT NOT NULL DEFAULT 0,           -- ordinamento visualizzazione
-  PRIMARY KEY (consulente_id, prodotto_id)
+  PRIMARY KEY (incaricato_id, prodotto_id)
 );
 
 -- ---------------------------------------------------------------------------
--- Lead — pipeline funnel consulente
+-- Lead — pipeline funnel incaricato
 -- ---------------------------------------------------------------------------
 CREATE TABLE lead (
   id                        SERIAL PRIMARY KEY,
@@ -283,12 +284,12 @@ CREATE TABLE lead (
   email                     VARCHAR(200),
   telefono                  VARCHAR(20),
   fonte                     VARCHAR(50),                       -- serata, social, referral, sito
-  consulente_id             INT REFERENCES consulenti(id),
+  incaricato_id             INT REFERENCES incaricati(id),
   stato_funnel              stato_funnel_lead NOT NULL DEFAULT 'nuovo',
   data_contatto             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   note                      TEXT,
   convertito_cliente_id     INT REFERENCES clienti(id),
-  convertito_consulente_id  INT REFERENCES consulenti(id),
+  convertito_incaricato_id  INT REFERENCES incaricati(id),
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -299,7 +300,7 @@ CREATE TABLE lead (
 CREATE TABLE ordini (
   id                   SERIAL PRIMARY KEY,
   cliente_id           INT REFERENCES clienti(id),             -- NULL se autoconsumo
-  consulente_id        INT NOT NULL REFERENCES consulenti(id),
+  incaricato_id        INT NOT NULL REFERENCES incaricati(id),
   data                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   totale               DECIMAL(10,2) NOT NULL DEFAULT 0,
   stato                stato_ordine NOT NULL DEFAULT 'nuovo',
@@ -331,7 +332,7 @@ CREATE TABLE ordini_righe (
 CREATE TABLE storni_pv (
   id             SERIAL PRIMARY KEY,
   ordine_id      INT NOT NULL REFERENCES ordini(id),
-  consulente_id  INT NOT NULL REFERENCES consulenti(id),
+  incaricato_id  INT NOT NULL REFERENCES incaricati(id),
   pv_stornati    DECIMAL(10,2) NOT NULL CHECK (pv_stornati > 0),
   anno           SMALLINT NOT NULL,
   mese           SMALLINT NOT NULL CHECK (mese BETWEEN 1 AND 12),
@@ -346,12 +347,12 @@ CREATE TABLE storni_pv (
 -- ---------------------------------------------------------------------------
 CREATE TABLE provvigioni_mensili (
   id                    SERIAL PRIMARY KEY,
-  consulente_id         INT NOT NULL REFERENCES consulenti(id),
+  incaricato_id         INT NOT NULL REFERENCES incaricati(id),
   anno                  SMALLINT NOT NULL,
   mese                  SMALLINT NOT NULL CHECK (mese BETWEEN 1 AND 12),
   pv_mese               DECIMAL(10,2) NOT NULL DEFAULT 0,
   gv_mese               DECIMAL(10,2) NOT NULL DEFAULT 0,
-  status_al_calcolo     status_consulente NOT NULL,
+  status_al_calcolo     status_incaricato NOT NULL,
   era_attivo            BOOLEAN NOT NULL DEFAULT FALSE,
   provvigione_personale DECIMAL(10,2) NOT NULL DEFAULT 0,
   reddito_residuale     DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -364,7 +365,7 @@ CREATE TABLE provvigioni_mensili (
   stato                 stato_pagamento_prov NOT NULL DEFAULT 'calcolato',
   data_calcolo          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   data_pagamento        TIMESTAMPTZ,
-  UNIQUE(consulente_id, anno, mese)
+  UNIQUE(incaricato_id, anno, mese)
 );
 
 -- ---------------------------------------------------------------------------
@@ -372,7 +373,7 @@ CREATE TABLE provvigioni_mensili (
 -- ---------------------------------------------------------------------------
 CREATE TABLE eventi (
   id                       SERIAL PRIMARY KEY,
-  consulente_id            INT NOT NULL REFERENCES consulenti(id),
+  incaricato_id            INT NOT NULL REFERENCES incaricati(id),
   tipo                     tipo_evento NOT NULL DEFAULT 'serata_degustazione',
   data                     TIMESTAMPTZ NOT NULL,
   luogo                    VARCHAR(200),
@@ -384,13 +385,13 @@ CREATE TABLE eventi (
 
 -- ---------------------------------------------------------------------------
 -- Partecipanti eventi
--- FK dinamica verso lead / clienti / consulenti tramite (tipo_partecipante, riferimento_id)
+-- FK dinamica verso lead / clienti / incaricati tramite (tipo_partecipante, riferimento_id)
 -- ---------------------------------------------------------------------------
 CREATE TABLE eventi_partecipanti (
   id                       SERIAL PRIMARY KEY,
   evento_id                INT NOT NULL REFERENCES eventi(id) ON DELETE CASCADE,
   tipo_partecipante        VARCHAR(20) NOT NULL
-                             CHECK (tipo_partecipante IN ('lead', 'cliente', 'consulente')),
+                             CHECK (tipo_partecipante IN ('lead', 'cliente', 'incaricato')),
   riferimento_id           INT NOT NULL,
   stato                    stato_partecipante NOT NULL DEFAULT 'invitato',
   ordine_post_evento_id    INT REFERENCES ordini(id)
@@ -401,9 +402,9 @@ CREATE TABLE eventi_partecipanti (
 -- ---------------------------------------------------------------------------
 CREATE TABLE interazioni_crm (
   id                SERIAL PRIMARY KEY,
-  consulente_id     INT NOT NULL REFERENCES consulenti(id),
+  incaricato_id     INT NOT NULL REFERENCES incaricati(id),
   tipo_soggetto     VARCHAR(20) NOT NULL
-                      CHECK (tipo_soggetto IN ('lead', 'cliente', 'consulente')),
+                      CHECK (tipo_soggetto IN ('lead', 'cliente', 'incaricato')),
   soggetto_id       INT NOT NULL,
   tipo_interazione  VARCHAR(50) NOT NULL,   -- chiamata, email, serata, whatsapp, sms
   data              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -412,13 +413,13 @@ CREATE TABLE interazioni_crm (
 );
 
 -- ---------------------------------------------------------------------------
--- Cantina personale (doc 10) — per clienti E consulenti
+-- Cantina personale (doc 10) — per clienti E incaricati
 -- ---------------------------------------------------------------------------
 CREATE TABLE cantina_personale (
   id                  SERIAL PRIMARY KEY,
   utente_id           INT NOT NULL,
   utente_tipo         VARCHAR(20) NOT NULL
-                        CHECK (utente_tipo IN ('CONSULENTE', 'CLIENTE')),
+                        CHECK (utente_tipo IN ('INCARICATO', 'CLIENTE')),
   prodotto_id         INT NOT NULL REFERENCES prodotti(id),
   quantita            INT NOT NULL DEFAULT 1 CHECK (quantita >= 0),
   stato               stato_cantina_personale NOT NULL DEFAULT 'IN_CANTINA',
@@ -432,18 +433,18 @@ CREATE TABLE cantina_personale (
 );
 
 -- ---------------------------------------------------------------------------
--- Magazzino operativo consulente (doc 10)
+-- Magazzino operativo incaricato (doc 10)
 -- ---------------------------------------------------------------------------
 CREATE TABLE magazzino_consulente (
   id                    SERIAL PRIMARY KEY,
-  consulente_id         INT NOT NULL REFERENCES consulenti(id),
+  incaricato_id         INT NOT NULL REFERENCES incaricati(id),
   prodotto_id           INT NOT NULL REFERENCES prodotti(id),
   quantita_disponibile  INT NOT NULL DEFAULT 0 CHECK (quantita_disponibile >= 0),
   quantita_riservata    INT NOT NULL DEFAULT 0 CHECK (quantita_riservata >= 0),
   scorta_minima         INT NOT NULL DEFAULT 2 CHECK (scorta_minima >= 0),
   data_ultimo_carico    DATE,
   data_ultima_uscita    DATE,
-  UNIQUE(consulente_id, prodotto_id),
+  UNIQUE(incaricato_id, prodotto_id),
   -- REGOLA 2 doc 10: non riservare più di quanto si possiede
   CONSTRAINT chk_riservata CHECK (quantita_riservata <= quantita_disponibile)
 );
@@ -489,16 +490,16 @@ CREATE TABLE box_degustazione_righe (
 -- INDICI
 -- =============================================================================
 
--- Consulenti — ricerca per sponsor (percorso albero genealogico)
-CREATE INDEX idx_consulenti_sponsor    ON consulenti(sponsor_id);
-CREATE INDEX idx_consulenti_status     ON consulenti(status);
-CREATE INDEX idx_consulenti_email      ON consulenti(email);
-CREATE INDEX idx_consulenti_cf         ON consulenti(codice_fiscale);
-CREATE INDEX idx_consulenti_referral   ON consulenti(link_referral);
+-- Incaricati — ricerca per sponsor (percorso albero genealogico)
+CREATE INDEX idx_incaricati_sponsor    ON incaricati(sponsor_id);
+CREATE INDEX idx_incaricati_status     ON incaricati(status);
+CREATE INDEX idx_incaricati_email      ON incaricati(email);
+CREATE INDEX idx_incaricati_cf         ON incaricati(codice_fiscale);
+CREATE INDEX idx_incaricati_referral   ON incaricati(link_referral);
 
 -- Ordini
 CREATE INDEX idx_ordini_cliente        ON ordini(cliente_id);
-CREATE INDEX idx_ordini_consulente     ON ordini(consulente_id);
+CREATE INDEX idx_ordini_incaricato     ON ordini(incaricato_id);
 CREATE INDEX idx_ordini_stato          ON ordini(stato);
 CREATE INDEX idx_ordini_data           ON ordini(data);
 CREATE INDEX idx_ordini_righe_ordine   ON ordini_righe(ordine_id);
@@ -511,24 +512,24 @@ CREATE INDEX idx_prodotti_regione      ON prodotti(regione_id);
 CREATE INDEX idx_prodotti_disponibile  ON prodotti(disponibile);
 
 -- Provvigioni
-CREATE INDEX idx_prov_consulente_mese  ON provvigioni_mensili(consulente_id, anno, mese);
+CREATE INDEX idx_prov_incaricato_mese  ON provvigioni_mensili(incaricato_id, anno, mese);
 CREATE INDEX idx_prov_stato            ON provvigioni_mensili(stato);
 
 -- Storni
-CREATE INDEX idx_storni_mese           ON storni_pv(consulente_id, anno, mese);
+CREATE INDEX idx_storni_mese           ON storni_pv(incaricato_id, anno, mese);
 
 -- Lead
-CREATE INDEX idx_lead_consulente       ON lead(consulente_id);
+CREATE INDEX idx_lead_incaricato       ON lead(incaricato_id);
 CREATE INDEX idx_lead_funnel           ON lead(stato_funnel);
 
 -- Clienti
-CREATE INDEX idx_clienti_consulente    ON clienti(consulente_id);
+CREATE INDEX idx_clienti_incaricato    ON clienti(incaricato_id);
 
 -- Magazzino
-CREATE INDEX idx_mag_consulente        ON magazzino_consulente(consulente_id);
+CREATE INDEX idx_mag_incaricato        ON magazzino_consulente(incaricato_id);
 CREATE INDEX idx_mov_magazzino_data    ON movimenti_magazzino(magazzino_id, data);
 -- Indice parziale per query alert scorta bassa
-CREATE INDEX idx_mag_alert             ON magazzino_consulente(consulente_id)
+CREATE INDEX idx_mag_alert             ON magazzino_consulente(incaricato_id)
   WHERE quantita_disponibile <= scorta_minima;
 
 -- Cantina personale
@@ -536,40 +537,37 @@ CREATE INDEX idx_cantina_utente        ON cantina_personale(utente_id, utente_ti
 CREATE INDEX idx_cantina_prodotto      ON cantina_personale(prodotto_id);
 
 -- Interazioni CRM
-CREATE INDEX idx_crm_consulente        ON interazioni_crm(consulente_id);
+CREATE INDEX idx_crm_incaricato        ON interazioni_crm(incaricato_id);
 CREATE INDEX idx_crm_soggetto          ON interazioni_crm(tipo_soggetto, soggetto_id);
 
--- Consulenti — ricerca per auth_user_id (proxy.ts e dashboard ad ogni request)
-CREATE INDEX idx_consulenti_auth_user  ON consulenti(auth_user_id);
+-- Incaricati — ricerca per auth_user_id (proxy.ts e dashboard ad ogni request)
+CREATE INDEX idx_incaricati_auth_user  ON incaricati(auth_user_id);
 
 -- Candidature
 CREATE INDEX idx_candidature_stato     ON candidature(stato);
 CREATE INDEX idx_candidature_email     ON candidature(email);
 
--- Vini preferiti consulente
-CREATE INDEX idx_vini_pref_consulente  ON consulente_vini_preferiti(consulente_id);
+-- Vini preferiti incaricato
+CREATE INDEX idx_vini_pref_incaricato  ON incaricato_vini_preferiti(incaricato_id);
 
 
 -- =============================================================================
--- FUNZIONI CUSTOM IN PRODUZIONE (body non incluso — vedi task M1.5)
+-- FUNZIONI CUSTOM IN PRODUZIONE
+-- Aggiornate in M1.5 (2026-04-17): body versionato in 003_rename_consulente_incaricato.sql
 -- =============================================================================
--- Le seguenti funzioni esistono su Supabase ma i loro body non sono versionati
--- in questo file. Recuperare con pg_get_functiondef() per completare la
--- documentazione (task M1.5 — rename consulente→incaricato coprirà anche questo).
---
--- Funzioni presenti al 2026-04-17:
---   aggiorna_profilo_consulente(p_bio, p_messaggio_referral, p_specialita, p_foto_url)
---   aggiungi_cliente_consulente(p_nome, p_cognome, p_email, p_telefono)
---   candida_consulente(p_nome, p_cognome, p_email, p_telefono, p_motivazione, p_referral_code)
---   crea_ordine_consulente(p_cliente_id, p_tipo, p_righe)
---   get_admin_consulenti(p_anno, p_mese)
+-- Funzioni presenti al 2026-04-17 (post M1.5):
+--   aggiorna_profilo_incaricato(p_bio, p_messaggio_referral, p_specialita, p_foto_url)
+--   aggiungi_cliente_incaricato(p_nome, p_cognome, p_email, p_telefono)
+--   candida_incaricato(p_nome, p_cognome, p_email, p_telefono, p_motivazione, p_referral_code)
+--   crea_ordine_incaricato(p_cliente_id, p_tipo, p_righe)
+--   get_admin_incaricati(p_anno, p_mese)
 --   get_admin_kpi(p_anno, p_mese)
---   get_admin_top_consulenti(p_anno, p_mese, p_limit)
+--   get_admin_top_incaricati(p_anno, p_mese, p_limit)
 --   get_admin_trend(p_mesi)
---   get_clienti_consulente(p_consulente_id)
---   get_consulente_by_referral(p_code)
---   get_dashboard_consulente(p_consulente_id, p_anno, p_mese)
---   get_team_consulente(p_consulente_id, p_anno, p_mese)
+--   get_clienti_incaricato(p_incaricato_id)
+--   get_incaricato_by_referral(p_code)
+--   get_dashboard_incaricato(p_incaricato_id, p_anno, p_mese)
+--   get_team_incaricato(p_incaricato_id, p_anno, p_mese)
 --   rls_auto_enable()
 --   set_referral_code(p_code)
 --   set_vini_preferiti(p_prodotto_ids)
@@ -624,7 +622,7 @@ INSERT INTO qualifiche (
 ('TEAM_COORDINATOR',50,   1500,    0.15,    0.15,   0.15,   0.15,   0.15,   0,     0,     0,     0,    0,    FALSE, FALSE),
 -- MANAGER: 4 livelli al 15% + L5 al 3% (intermezzo formativo richiesto)
 ('MANAGER',        80,   15000,    0.15,    0.15,   0.15,   0.15,   0.15,   0.03,  0,     0,     0,    0,    FALSE, FALSE),
--- DIRECTOR: +L6 al 2% + CAB 1€/consulente attivo
+-- DIRECTOR: +L6 al 2% + CAB 1€/incaricato attivo
 ('DIRECTOR',      100,   50000,    0.15,    0.15,   0.15,   0.15,   0.15,   0.03,  0.02,  0,     0,    1.00, FALSE, FALSE),
 -- AMBASSADOR: +L7 al 1% + CAB 2€ + Bonus Car
 ('AMBASSADOR',    120,  100000,    0.15,    0.15,   0.15,   0.15,   0.15,   0.03,  0.02,  0.01,  0,    2.00, TRUE,  FALSE),
@@ -696,7 +694,7 @@ INSERT INTO prodotti (
 SELECT setval('prodotti_id_seq', 30);
 
 -- ---------------------------------------------------------------------------
--- Consulenti seed — albero dimostrativo (5 nodi, 3 livelli)
+-- Incaricati seed — albero dimostrativo (5 nodi, 3 livelli)
 --
 -- Struttura:
 --   [1] Francesco Panzella (admin/top — sponsor_id NULL)
@@ -705,7 +703,7 @@ SELECT setval('prodotti_id_seq', 30);
 --                     └─ [4] Marta Esposito (L3 di Francesco, L1 di Luca)
 --       └─ [5] Roberto Rinaldi (L1 di Francesco)
 -- ---------------------------------------------------------------------------
-INSERT INTO consulenti (
+INSERT INTO incaricati (
   id, nome, cognome, email, telefono, codice_fiscale,
   sponsor_id, status, status_max,
   pv_mese_corrente, gv_mese_corrente,
@@ -733,14 +731,14 @@ INSERT INTO consulenti (
    1, 'STARTER', 'STARTER', 18.00, 0.00,
    FALSE, FALSE, 'ref-rr005', 'attivo', '2025-11-05 16:00:00');
 
-SELECT setval('consulenti_id_seq', 5);
+SELECT setval('incaricati_id_seq', 5);
 
 -- ---------------------------------------------------------------------------
 -- Clienti seed — 4 clienti demo
 -- ---------------------------------------------------------------------------
 INSERT INTO clienti (
   id, nome, cognome, email, telefono,
-  consulente_id, data_primo_acquisto, segmento,
+  incaricato_id, data_primo_acquisto, segmento,
   gdpr_consenso, gdpr_data_consenso
 ) VALUES
 (1, 'Anna',    'Ferretti',  'anna.ferretti@gmail.com',   '+39 349 1111111', 2, '2025-05-10', 'wine_lover', TRUE, '2025-05-10'),
@@ -789,9 +787,9 @@ INSERT INTO box_degustazione_righe (box_id, prodotto_id, quantita) VALUES
 -- NOTE IMPLEMENTATIVE
 -- =============================================================================
 -- 1. CALCOLO PV al pagamento: trigger su ordini.stato → 'pagato' aggiorna pv_generati
---    e propaga GV su tutta la catena upline (percorso ricorsivo su consulenti.sponsor_id)
+--    e propaga GV su tutta la catena upline (percorso ricorsivo su incaricati.sponsor_id)
 --
--- 2. STATUS_MAX: trigger su consulenti.status → aggiorna status_max se nuovo status > max
+-- 2. STATUS_MAX: trigger su incaricati.status → aggiorna status_max se nuovo status > max
 --    (usa ordering enum PostgreSQL, es: 'ADVISOR' > 'STARTER' è TRUE)
 --
 -- 3. STOCK NEGATIVO: service magazzino.registraUscita() verifica

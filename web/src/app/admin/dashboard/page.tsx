@@ -57,7 +57,7 @@ export default async function AdminDashboardPage() {
   const [kpiRes, trendRes, topRes] = await Promise.all([
     supabase.rpc("get_admin_kpi", { p_anno: anno, p_mese: mese }).single(),
     supabase.rpc("get_admin_trend", { p_mesi: 6 }),
-    supabase.rpc("get_admin_top_consulenti", { p_anno: anno, p_mese: mese, p_limit: 5 }),
+    supabase.rpc("get_admin_top_incaricati", { p_anno: anno, p_mese: mese, p_limit: 5 }),
   ]);
 
   const kpi  = kpiRes.data;
@@ -79,7 +79,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard label="Fatturato mese"     value={`€ ${Number(kpi?.fatturato_mese ?? 0).toFixed(2)}`} />
         <KpiCard label="Ordini mese"        value={String(kpi?.ordini_mese ?? 0)} />
-        <KpiCard label="Consulenti attivi"  value={String(kpi?.consulenti_attivi ?? 0)} sub="PV ≥ minimo status" />
+        <KpiCard label="Incaricati attivi"   value={String(kpi?.incaricati_attivi ?? 0)} sub="PV ≥ minimo status" />
         <KpiCard label="Nuovi iscritti"     value={String(kpi?.nuovi_iscritti ?? 0)} sub="questo mese" />
       </div>
 
@@ -92,7 +92,7 @@ export default async function AdminDashboardPage() {
 
         {/* Top 5 consulenti */}
         <div className="rounded-xl p-5" style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
-          <p className="text-sm font-semibold mb-4" style={{ color: "var(--color-pearl)" }}>Top 5 consulenti — PV mese</p>
+          <p className="text-sm font-semibold mb-4" style={{ color: "var(--color-pearl)" }}>Top 5 incaricati — PV mese</p>
           {top.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--color-muted)" }}>Nessun dato</p>
           ) : (

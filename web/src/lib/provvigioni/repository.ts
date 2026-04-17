@@ -4,9 +4,9 @@
 
 import { Pool, PoolClient } from 'pg'
 import {
-  StatusConsulente,
+  StatusIncaricato,
   Qualifica,
-  ConsulenteMese,
+  IncaricatoMese,
   StornoRecord,
   ProvvigioneResult,
   PromozioneResult,
@@ -14,7 +14,7 @@ import {
 
 // ─── Caricamento dati ────────────────────────────────────────────────────────
 
-export async function loadQualifiche(pool: Pool): Promise<Map<StatusConsulente, Qualifica>> {
+export async function loadQualifiche(pool: Pool): Promise<Map<StatusIncaricato, Qualifica>> {
   const res = await pool.query<{
     status: string
     pv_min: string
@@ -33,10 +33,10 @@ export async function loadQualifiche(pool: Pool): Promise<Map<StatusConsulente, 
     ha_global_pool: boolean
   }>('SELECT * FROM qualifiche')
 
-  const map = new Map<StatusConsulente, Qualifica>()
+  const map = new Map<StatusIncaricato, Qualifica>()
   for (const row of res.rows) {
-    map.set(row.status as StatusConsulente, {
-      status: row.status as StatusConsulente,
+    map.set(row.status as StatusIncaricato, {
+      status: row.status as StatusIncaricato,
       pvMin: parseInt(row.pv_min),
       gvMin: parseInt(row.gv_min),
       provvigionePers: parseFloat(row.provvigione_pers),
@@ -59,17 +59,17 @@ export async function loadQualifiche(pool: Pool): Promise<Map<StatusConsulente, 
 }
 
 /**
- * Carica tutti i consulenti non cancellati/dormienti con i PV/fatturato
+ * Carica tutti gli incaricati non cancellati/dormienti con i PV/fatturato
  * del mese indicato (calcolati dagli ordini in stato 'pagato').
  *
- * Nota: un consulente con zero ordini nel mese viene comunque incluso
+ * Nota: un incaricato con zero ordini nel mese viene comunque incluso
  * (pvNetto=0, fatturatoPersonale=0) per il check attività e il GV upline.
  */
-export async function loadConsulentiMese(
+export async function loadIncaricatiMese(
   pool: Pool,
   anno: number,
   mese: number
-): Promise<Map<number, ConsulenteMese>> {
+): Promise<Map<number, IncaricatoMese>> {
   const res = await pool.query<{
     id: number
     sponsor_id: number | null
@@ -87,9 +87,9 @@ export async function loadConsulentiMese(
        c.formazione_completata,
        COALESCE(SUM(o.pv_generati), 0)::text  AS pv_lordo,
        COALESCE(SUM(o.totale),      0)::text  AS fatturato_personale
-     FROM consulenti c
+     FROM incaricati c
      LEFT JOIN ordini o
-       ON  o.consulente_id = c.id
+       ON  o.incaricato_id = c.id
        AND EXTRACT(YEAR  FROM o.data) = $1
        AND EXTRACT(MONTH FROM o.data) = $2
        AND o.stato = 'pagato'
@@ -98,14 +98,14 @@ export async function loadConsulentiMese(
     [anno, mese]
   )
 
-  const map = new Map<number, ConsulenteMese>()
+  const map = new Map<number, IncaricatoMese>()
   for (const row of res.rows) {
     const pv = parseFloat(row.pv_lordo)
     map.set(row.id, {
       id: row.id,
       sponsorId: row.sponsor_id,
-      status: row.status as StatusConsulente,
-      statusMax: row.status_max as StatusConsulente,
+      status: row.status as StatusIncaricato,
+      statusMax: row.status_max as StatusIncaricato,
       formazioneCompletata: row.formazione_completata,
       pvLordo: pv,
       pvNetto: pv,  // sarà ridotto dallo step 1 se ci sono storni
@@ -118,23 +118,23 @@ export async function loadConsulentiMese(
 }
 
 /**
- * Carica gli storni PV del mese, aggregati per consulente.
- * Più storni per lo stesso consulente nello stesso mese vengono sommati.
+ * Carica gli storni PV del mese, aggregati per incaricato.
+ * Più storni per lo stesso incaricato nello stesso mese vengono sommati.
  */
 export async function loadStorni(
   pool: Pool,
   anno: number,
   mese: number
 ): Promise<StornoRecord[]> {
-  const res = await pool.query<{ consulente_id: number; pv_stornati: string }>(
-    `SELECT consulente_id, SUM(pv_stornati)::text AS pv_stornati
+  const res = await pool.query<{ incaricato_id: number; pv_stornati: string }>(
+    `SELECT incaricato_id, SUM(pv_stornati)::text AS pv_stornati
      FROM storni_pv
      WHERE anno = $1 AND mese = $2
-     GROUP BY consulente_id`,
+     GROUP BY incaricato_id`,
     [anno, mese]
   )
   return res.rows.map(r => ({
-    consulenteId: r.consulente_id,
+    incaricatoId: r.incaricato_id,
     pvStornati: parseFloat(r.pv_stornati),
   }))
 }
@@ -153,12 +153,12 @@ export async function saveProvvigioni(
   for (const p of provvigioni) {
     await client.query(
       `INSERT INTO provvigioni_mensili (
-         consulente_id, anno, mese,
+         incaricato_id, anno, mese,
          pv_mese, gv_mese, status_al_calcolo, era_attivo,
          provvigione_personale, reddito_residuale, residuale_dettaglio,
          cab_bonus, bonus_car, global_pool, totale, stato, data_calcolo
        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,'calcolato',NOW())
-       ON CONFLICT (consulente_id, anno, mese) DO UPDATE SET
+       ON CONFLICT (incaricato_id, anno, mese) DO UPDATE SET
          pv_mese               = EXCLUDED.pv_mese,
          gv_mese               = EXCLUDED.gv_mese,
          status_al_calcolo     = EXCLUDED.status_al_calcolo,
@@ -173,7 +173,7 @@ export async function saveProvvigioni(
          stato                 = 'calcolato',
          data_calcolo          = NOW()`,
       [
-        p.consulenteId, p.anno, p.mese,
+        p.incaricatoId, p.anno, p.mese,
         p.pvMese, p.gvMese, p.statusAlCalcolo, p.eraAttivo,
         p.provvigionePersonale, p.redditoResiduale,
         JSON.stringify(p.residualeDettaglio),
@@ -184,7 +184,7 @@ export async function saveProvvigioni(
 }
 
 /**
- * Applica le promozioni su consulenti.
+ * Applica le promozioni su incaricati.
  * status e status_max vengono aggiornati atomicamente nella transazione del batch.
  */
 export async function savePromozioni(
@@ -193,16 +193,16 @@ export async function savePromozioni(
 ): Promise<void> {
   for (const p of promozioni) {
     await client.query(
-      `UPDATE consulenti
+      `UPDATE incaricati
        SET status = $2, status_max = $3, data_ultimo_status_change = NOW()
        WHERE id = $1`,
-      [p.consulenteId, p.nuovoStatus, p.nuovoStatusMax]
+      [p.incaricatoId, p.nuovoStatus, p.nuovoStatusMax]
     )
   }
 }
 
 /**
- * Aggiorna i flag di attività e i contatori PV/GV correnti sui consulenti.
+ * Aggiorna i flag di attività e i contatori PV/GV correnti sugli incaricati.
  * Serve alla dashboard e alle notifiche in tempo reale.
  */
 export async function updateAttiviConsulenti(
@@ -211,10 +211,10 @@ export async function updateAttiviConsulenti(
 ): Promise<void> {
   for (const p of provvigioni) {
     await client.query(
-      `UPDATE consulenti
+      `UPDATE incaricati
        SET attivo = $2, pv_mese_corrente = $3, gv_mese_corrente = $4
        WHERE id = $1`,
-      [p.consulenteId, p.eraAttivo, p.pvMese, p.gvMese]
+      [p.incaricatoId, p.eraAttivo, p.pvMese, p.gvMese]
     )
   }
 }

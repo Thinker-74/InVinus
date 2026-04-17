@@ -6,7 +6,7 @@ import { Pool } from 'pg'
 import { eseguiBatch } from './engine'
 import {
   loadQualifiche,
-  loadConsulentiMese,
+  loadIncaricatiMese,
   loadStorni,
   saveProvvigioni,
   savePromozioni,
@@ -40,7 +40,7 @@ export async function calcolaProvvigioniMensili(
     // ── Carica dati (in parallelo dove possibile) ─────────────────────────
     const [qualifiche, nodes, storni] = await Promise.all([
       loadQualifiche(pool),
-      loadConsulentiMese(pool, anno, mese),
+      loadIncaricatiMese(pool, anno, mese),
       loadStorni(pool, anno, mese),
     ])
 

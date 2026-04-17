@@ -11,14 +11,14 @@
 // =============================================================================
 
 import {
-  StatusConsulente,
+  StatusIncaricato,
   STATUS_LEVEL,
   ALL_STATUS,
   MAX_LIVELLI,
   BONUS_CAR_IMPORTO_EUR,
   SOGLIA_MINIMA_PAYOUT_EUR,
   Qualifica,
-  ConsulenteMese,
+  IncaricatoMese,
   StornoRecord,
   ProvvigioneResult,
   PromozioneResult,
@@ -31,7 +31,7 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-function gvTotale(node: ConsulenteMese): number {
+function gvTotale(node: IncaricatoMese): number {
   return node.gvByLevel.reduce((s, v) => s + v, 0)
 }
 
@@ -39,7 +39,7 @@ function gvTotale(node: ConsulenteMese): number {
  * Costruisce la mappa parentId → childIds dall'insieme di nodi.
  * Nodi con sponsor fuori dal batch (es. admin non incluso) vengono trattati come radici.
  */
-function buildChildrenMap(nodes: Map<number, ConsulenteMese>): Map<number, number[]> {
+function buildChildrenMap(nodes: Map<number, IncaricatoMese>): Map<number, number[]> {
   const children = new Map<number, number[]>()
   for (const node of nodes.values()) {
     if (node.sponsorId !== null && nodes.has(node.sponsorId)) {
@@ -53,7 +53,7 @@ function buildChildrenMap(nodes: Map<number, ConsulenteMese>): Map<number, numbe
 /**
  * Ritorna i nodi radice del batch (sponsor null o sponsor fuori dal batch).
  */
-function findRoots(nodes: Map<number, ConsulenteMese>): number[] {
+function findRoots(nodes: Map<number, IncaricatoMese>): number[] {
   return Array.from(nodes.values())
     .filter(n => n.sponsorId === null || !nodes.has(n.sponsorId))
     .map(n => n.id)
@@ -69,12 +69,12 @@ function findRoots(nodes: Map<number, ConsulenteMese>): number[] {
  * Fonte: doc 12 §1 — tabella storni_pv traccia storno per consulente/mese.
  */
 export function applicaStorni(
-  nodes: Map<number, ConsulenteMese>,
+  nodes: Map<number, IncaricatoMese>,
   storni: StornoRecord[]
 ): number {
   let count = 0
   for (const storno of storni) {
-    const node = nodes.get(storno.consulenteId)
+    const node = nodes.get(storno.incaricatoId)
     if (node === undefined) continue
 
     const riduzionePv = Math.min(storno.pvStornati, node.pvNetto)
@@ -101,7 +101,7 @@ export function applicaStorni(
  * Invariante dopo questa funzione:
  *   gvTotale(node) = Σ pvNetto di tutta la downline
  */
-export function consolidaGvByLevel(nodes: Map<number, ConsulenteMese>): void {
+export function consolidaGvByLevel(nodes: Map<number, IncaricatoMese>): void {
   const children = buildChildrenMap(nodes)
   const roots = findRoots(nodes)
 
@@ -139,7 +139,7 @@ export function consolidaGvByLevel(nodes: Map<number, ConsulenteMese>): void {
 // ─── Step 3: Verifica attività mensile ───────────────────────────────────────
 
 /**
- * Marca ogni consulente come attivo o inattivo per il mese.
+ * Marca ogni incaricato come attivo o inattivo per il mese.
  *
  * Regola (doc 12 §3): inattivo se PV_mese < PV_richiesto_dal_proprio_status.
  * Il requisito GV si usa solo per le promozioni, non per l'attività mensile.
@@ -150,8 +150,8 @@ export function consolidaGvByLevel(nodes: Map<number, ConsulenteMese>): void {
  * - Reddito residuale, CAB, Bonus Car: NON percepiti
  */
 export function checkAttivita(
-  nodes: Map<number, ConsulenteMese>,
-  qualifiche: Map<StatusConsulente, Qualifica>
+  nodes: Map<number, IncaricatoMese>,
+  qualifiche: Map<StatusIncaricato, Qualifica>
 ): void {
   for (const node of nodes.values()) {
     const q = qualifiche.get(node.status)!
@@ -162,7 +162,7 @@ export function checkAttivita(
 // ─── Step 4: Verifica promozioni (irreversibili) ──────────────────────────────
 
 /**
- * Per ogni consulente verifica se soddisfa i requisiti dello status immediatamente
+ * Per ogni incaricato verifica se soddisfa i requisiti dello status immediatamente
  * successivo al proprio statusMax corrente.
  *
  * Regole (doc 02 + doc 12 §4):
@@ -176,14 +176,14 @@ export function checkAttivita(
  * (più semplice, da rivalutare con Francesco).
  */
 export function verificaPromozioni(
-  nodes: Map<number, ConsulenteMese>,
-  qualifiche: Map<StatusConsulente, Qualifica>
+  nodes: Map<number, IncaricatoMese>,
+  qualifiche: Map<StatusIncaricato, Qualifica>
 ): PromozioneResult[] {
   const promozioni: PromozioneResult[] = []
 
   for (const node of nodes.values()) {
     const currentMaxLevel = STATUS_LEVEL[node.statusMax]
-    const nextStatus = ALL_STATUS[currentMaxLevel + 1] as StatusConsulente | undefined
+    const nextStatus = ALL_STATUS[currentMaxLevel + 1] as StatusIncaricato | undefined
     if (!nextStatus) continue // già GOLDEN — massimo raggiunto
 
     const nextQ = qualifiche.get(nextStatus)!
@@ -197,7 +197,7 @@ export function verificaPromozioni(
       node.status = nextStatus
       node.statusMax = nextStatus
       promozioni.push({
-        consulenteId: node.id,
+        incaricatoId: node.id,
         statusPrecedente: prev,
         nuovoStatus: nextStatus,
         nuovoStatusMax: nextStatus,
@@ -211,12 +211,12 @@ export function verificaPromozioni(
 // ─── Step 5: Calcolo provvigioni complete + soglia payout ────────────────────
 
 /**
- * Costruisce la mappa consulenteId → consulentiAttiviByLevel[0..7].
+ * Costruisce la mappa incaricatoId → incaricatiAttiviByLevel[0..7].
  * Usata per il CAB: conta consulenti attivi a ogni profondità dell'albero.
  * Richiede step 3 completato (node.attivo popolato).
  */
 function buildAttiviByLevel(
-  nodes: Map<number, ConsulenteMese>
+  nodes: Map<number, IncaricatoMese>
 ): Map<number, number[]> {
   const children = buildChildrenMap(nodes)
   const roots = findRoots(nodes)
@@ -271,8 +271,8 @@ function maxLivelloConResiduale(qualifica: Qualifica): number {
  *                               Passa 0 per tutti i mesi non di chiusura anno.
  */
 export function calcolaProvvigioni(
-  nodes: Map<number, ConsulenteMese>,
-  qualifiche: Map<StatusConsulente, Qualifica>,
+  nodes: Map<number, IncaricatoMese>,
+  qualifiche: Map<StatusIncaricato, Qualifica>,
   anno: number,
   mese: number,
   globalPoolAllocazione = 0
@@ -330,7 +330,7 @@ export function calcolaProvvigioni(
     )
 
     return {
-      consulenteId: node.id,
+      incaricatoId: node.id,
       anno,
       mese,
       pvMese: node.pvNetto,
@@ -359,9 +359,9 @@ export function calcolaProvvigioni(
  * in `index.ts`.
  */
 export function eseguiBatch(
-  nodes: Map<number, ConsulenteMese>,
+  nodes: Map<number, IncaricatoMese>,
   storni: StornoRecord[],
-  qualifiche: Map<StatusConsulente, Qualifica>,
+  qualifiche: Map<StatusIncaricato, Qualifica>,
   anno: number,
   mese: number,
   globalPoolAllocazione = 0
@@ -393,8 +393,8 @@ export function eseguiBatch(
     provvigioni,
     promozioni,
     storniApplicati,
-    consulentiAttivi: attivi,
-    consulentiInattivi: provvigioni.length - attivi,
+    incaricatiAttivi: attivi,
+    incaricatiInattivi: provvigioni.length - attivi,
     totaleLordo,
     totalePayout,
   }

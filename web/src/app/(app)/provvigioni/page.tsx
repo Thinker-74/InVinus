@@ -27,7 +27,7 @@ export default async function ProvvigioniPage() {
   if (!user) redirect("/login");
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("id, nome, cognome")
     .eq("auth_user_id", user.id)
     .single();
@@ -36,7 +36,7 @@ export default async function ProvvigioniPage() {
   const { data: righe } = await supabase
     .from("provvigioni_mensili")
     .select("anno, mese, pv_mese, gv_mese, provvigione_personale, reddito_residuale, cab_bonus, bonus_car, global_pool, totale, stato, data_pagamento, era_attivo")
-    .eq("consulente_id", consulente.id)
+    .eq("incaricato_id", consulente.id)
     .order("anno", { ascending: false })
     .order("mese", { ascending: false });
 

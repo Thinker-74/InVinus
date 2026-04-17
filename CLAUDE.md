@@ -68,16 +68,12 @@ Workflow obbligatorio per ogni modifica al DB:
 4. Rigenera i tipi TypeScript: `supabase gen types typescript --linked 2>&1 | tail -n +2 > web/src/types/supabase.ts`
 5. Commit tutto insieme: migration + schema.sql + tipi aggiornati
 
-### Nota terminologica (temporanea)
+### Terminologia ufficiale
 
 La figura venditoriale si chiama **incaricato alle vendite** ai sensi della L.173/2005 e D.Lgs. 114/98.
-Nello schema DB, nelle RPC e nel codice il termine attuale è "consulente" (residuo storico).
-È pianificata una milestone dedicata **M1.5 — rename consulente→incaricato** che allineerà
-schema, RPC, codice TypeScript e UI prima di M2.
-
-Fino all'esecuzione di M1.5:
-- nuovo codice/schema può continuare a usare "consulente" per coerenza locale con il resto
-- UI visibile all'utente usa SEMPRE "incaricato" (label, copy, tooltip, email, PDF)
+Nel codice, schema DB, RPC e UI il termine è uniformemente **incaricato**.
+Non usare "consulente" in nuovo codice.
+I log storici in `docs/progress/` restano immutati (record cronologico).
 
 ## Regole di contesto
 - Tutti i valori monetari sono in EUR

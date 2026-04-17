@@ -24,7 +24,7 @@ export async function creaOrdine(
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .rpc("crea_ordine_consulente", {
+    .rpc("crea_ordine_incaricato", {
       p_cliente_id: clienteId,
       p_tipo:       tipo,
       p_righe:      righe,

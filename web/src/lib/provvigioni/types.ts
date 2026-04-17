@@ -2,7 +2,7 @@
 // Tipi per il servizio di calcolo provvigioni mensili
 // =============================================================================
 
-export type StatusConsulente =
+export type StatusIncaricato =
   | 'STARTER'
   | 'APPRENTICE'
   | 'ADVISOR'
@@ -14,7 +14,7 @@ export type StatusConsulente =
   | 'GOLDEN'
 
 /** Ordinamento progressione carriera. Usato per confronti (> >=). */
-export const STATUS_LEVEL: Record<StatusConsulente, number> = {
+export const STATUS_LEVEL: Record<StatusIncaricato, number> = {
   STARTER: 0,
   APPRENTICE: 1,
   ADVISOR: 2,
@@ -26,7 +26,7 @@ export const STATUS_LEVEL: Record<StatusConsulente, number> = {
   GOLDEN: 8,
 }
 
-export const ALL_STATUS: StatusConsulente[] = [
+export const ALL_STATUS: StatusIncaricato[] = [
   'STARTER',
   'APPRENTICE',
   'ADVISOR',
@@ -50,7 +50,7 @@ export const SOGLIA_MINIMA_PAYOUT_EUR = 10.00
 // ─── Strutture dati del dominio ──────────────────────────────────────────────
 
 export interface Qualifica {
-  status: StatusConsulente
+  status: StatusIncaricato
   pvMin: number
   gvMin: number
   /** Frazione. Esempio: 0.15 per il 15%. */
@@ -67,11 +67,11 @@ export interface Qualifica {
  * Stato di un consulente per il mese di calcolo.
  * Viene popolato progressivamente durante i 6 step del batch.
  */
-export interface ConsulenteMese {
+export interface IncaricatoMese {
   id: number
   sponsorId: number | null
-  status: StatusConsulente
-  statusMax: StatusConsulente
+  status: StatusIncaricato
+  statusMax: StatusIncaricato
   formazioneCompletata: boolean
   // ── Dati di input (da ordini del mese) ───────────────────────────────────
   /** PV lordi dal mese (prima degli storni). */
@@ -102,18 +102,18 @@ export interface ConsulenteMese {
 }
 
 export interface StornoRecord {
-  consulenteId: number
+  incaricatoId: number
   /** PV da sottrarre (già aggregati per consulente se multipli storni nello stesso mese). */
   pvStornati: number
 }
 
 export interface ProvvigioneResult {
-  consulenteId: number
+  incaricatoId: number
   anno: number
   mese: number
   pvMese: number
   gvMese: number
-  statusAlCalcolo: StatusConsulente
+  statusAlCalcolo: StatusIncaricato
   eraAttivo: boolean
   provvigionePersonale: number
   redditoResiduale: number
@@ -129,10 +129,10 @@ export interface ProvvigioneResult {
 }
 
 export interface PromozioneResult {
-  consulenteId: number
-  statusPrecedente: StatusConsulente
-  nuovoStatus: StatusConsulente
-  nuovoStatusMax: StatusConsulente
+  incaricatoId: number
+  statusPrecedente: StatusIncaricato
+  nuovoStatus: StatusIncaricato
+  nuovoStatusMax: StatusIncaricato
 }
 
 export interface BatchResult {
@@ -141,8 +141,8 @@ export interface BatchResult {
   provvigioni: ProvvigioneResult[]
   promozioni: PromozioneResult[]
   storniApplicati: number
-  consulentiAttivi: number
-  consulentiInattivi: number
+  incaricatiAttivi: number
+  incaricatiInattivi: number
   /** Somma totale di tutte le provvigioni (incluse quelle sotto soglia). */
   totaleLordo: number
   /** Somma delle sole provvigioni da pagare subito (>= soglia). */

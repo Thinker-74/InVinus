@@ -8,31 +8,31 @@
 
 ## 1. Schema DB — tabelle chiave
 
-### 1.1 Tabella `consulenti`
+### 1.1 Tabella `incaricati`
 
-Estratto da `db/schema.sql` + ALTER da `db/migrations/001_security_fixes.sql`:
+Estratto da `db/schema.sql` + ALTER da `db/migrations/001_security_fixes.sql` + rename da `db/migrations/003_rename_consulente_incaricato.sql`:
 
 ```sql
-CREATE TABLE consulenti (
+CREATE TABLE incaricati (
   id                        SERIAL PRIMARY KEY,
   nome                      VARCHAR(100) NOT NULL,
   cognome                   VARCHAR(100) NOT NULL,
   email                     VARCHAR(200) NOT NULL UNIQUE,
   telefono                  VARCHAR(20),
   codice_fiscale            VARCHAR(16) UNIQUE,
-  sponsor_id                INT REFERENCES consulenti(id),     -- NULL = top of tree
-  status                    status_consulente NOT NULL DEFAULT 'STARTER',
-  status_max                status_consulente NOT NULL DEFAULT 'STARTER',
+  sponsor_id                INT REFERENCES incaricati(id),     -- NULL = top of tree
+  status                    status_incaricato NOT NULL DEFAULT 'STARTER',
+  status_max                status_incaricato NOT NULL DEFAULT 'STARTER',
   pv_mese_corrente          DECIMAL(10,2) NOT NULL DEFAULT 0,
   gv_mese_corrente          DECIMAL(10,2) NOT NULL DEFAULT 0,
   attivo                    BOOLEAN NOT NULL DEFAULT TRUE,
   formazione_completata     BOOLEAN NOT NULL DEFAULT FALSE,
   link_referral             VARCHAR(100) UNIQUE,
   stripe_account_id         VARCHAR(100),
-  stato_account             stato_account_consulente NOT NULL DEFAULT 'attivo',
+  stato_account             stato_account_incaricato NOT NULL DEFAULT 'attivo',
   data_iscrizione           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   data_ultimo_status_change TIMESTAMPTZ,
-  approvato_da              INT REFERENCES consulenti(id),
+  approvato_da              INT REFERENCES incaricati(id),
   approvato_il              TIMESTAMPTZ,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT chk_status_max CHECK (status_max >= status)
@@ -41,18 +41,18 @@ CREATE TABLE consulenti (
 
 **Nota: la colonna `ruolo` e `auth_user_id` NON sono presenti in `db/schema.sql`.**
 Esistono però nel codice applicativo (lette da `proxy.ts` e dalla dashboard):
-- `web/src/proxy.ts` esegue `.select("ruolo").eq("auth_user_id", user.id)` sulla tabella `consulenti`
+- `web/src/proxy.ts` esegue `.select("ruolo").eq("auth_user_id", user.id)` sulla tabella `incaricati`
 - `web/src/app/(app)/dashboard/page.tsx` esegue `.select("id, link_referral").eq("auth_user_id", user.id)`
 
 Queste colonne devono essere state aggiunte manualmente su Supabase o tramite migration non presente nel repo.
 
 Check automatici:
 - Colonna che collega a auth.users: `auth_user_id` — PRESENTE NEL CODICE, ASSENTE DA schema.sql
-- Campo ruolo admin/consulente: `ruolo` (VARCHAR presunto) — PRESENTE NEL CODICE, ASSENTE DA schema.sql
+- Campo ruolo admin/incaricato: `ruolo` (VARCHAR presunto) — PRESENTE NEL CODICE, ASSENTE DA schema.sql
 - Campi location (città, regione, cap): NON PRESENTI
 - Campi foto: NESSUNO
-- Come si distingue attivo/inattivo/pending: campo `attivo BOOLEAN` (soddisfa PV requisito mensile) + campo `stato_account stato_account_consulente` (enum: `attivo`, `sospeso`, `dormiente`, `cancellato`)
-- Self-reference sponsor: `sponsor_id` INT REFERENCES consulenti(id)
+- Come si distingue attivo/inattivo/pending: campo `attivo BOOLEAN` (soddisfa PV requisito mensile) + campo `stato_account stato_account_incaricato` (enum: `attivo`, `sospeso`, `dormiente`, `cancellato`)
+- Self-reference sponsor: `sponsor_id` INT REFERENCES incaricati(id)
 
 ### 1.2 Tabella `candidature`
 
@@ -67,7 +67,7 @@ CREATE TABLE candidature (
   email                 VARCHAR(200) NOT NULL,         -- no UNIQUE constraint
   telefono              VARCHAR(20),
   motivazione           TEXT,
-  sponsor_referral_code VARCHAR(100) REFERENCES consulenti(link_referral) ON UPDATE CASCADE,
+  sponsor_referral_code VARCHAR(100) REFERENCES incaricati(link_referral) ON UPDATE CASCADE,
   stato                 stato_candidatura NOT NULL DEFAULT 'in_attesa',
   note_admin            TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -78,7 +78,7 @@ Check automatici:
 - Stati possibili: enum `stato_candidatura` — valore seed `'in_attesa'`; altri valori dell'enum (es. `approvata`, `rifiutata`) da verificare con `SELECT enum_range(NULL::stato_candidatura)`
 - Campo email: `email VARCHAR(200) NOT NULL` — **senza UNIQUE constraint** (attenzione: duplicati possibili)
 - Campo CF: NON PRESENTE
-- Collegamento a consulenti dopo approvazione: la FK è `sponsor_referral_code → consulenti.link_referral`; il meccanismo di creazione del record `consulenti` post-approvazione è nella UI admin (`web/src/app/admin/candidature/`) — non c'è trigger automatico nel DB
+- Collegamento a incaricati dopo approvazione: la FK è `sponsor_referral_code → incaricati.link_referral`; il meccanismo di creazione del record `incaricati` post-approvazione è nella UI admin (`web/src/app/admin/candidature/`) — non c'è trigger automatico nel DB
 - Campo `note_admin`: PRESENTE (nullable)
 
 ### 1.3 Tabella `clienti`
@@ -90,7 +90,7 @@ CREATE TABLE clienti (
   cognome              VARCHAR(100) NOT NULL,
   email                VARCHAR(200) UNIQUE,
   telefono             VARCHAR(20),
-  consulente_id        INT REFERENCES consulenti(id),
+  incaricato_id        INT REFERENCES incaricati(id),
   data_primo_acquisto  TIMESTAMPTZ,
   segmento             VARCHAR(50),   -- wine_lover, horeca, regalo
   note                 TEXT,
@@ -101,7 +101,7 @@ CREATE TABLE clienti (
 ```
 
 Check automatici:
-- FK allo sponsor/consulente: `consulente_id` (chi ha portato il cliente)
+- FK all'incaricato: `incaricato_id` (chi ha portato il cliente)
 - user_id auth: NON PRESENTE
 - I clienti hanno login oggi? NO — nessuna colonna `auth_user_id` nella tabella clienti
 
@@ -109,7 +109,7 @@ Check automatici:
 
 ```sql
 CREATE TABLE qualifiche (
-  status               status_consulente PRIMARY KEY,
+  status               status_incaricato PRIMARY KEY,
   pv_min               INT NOT NULL DEFAULT 0,
   gv_min               INT NOT NULL DEFAULT 0,
   provvigione_pers     DECIMAL(5,4) NOT NULL DEFAULT 0.15,
@@ -146,12 +146,12 @@ Valori seed reali (da `db/schema.sql`):
 ```sql
 CREATE TABLE provvigioni_mensili (
   id                    SERIAL PRIMARY KEY,
-  consulente_id         INT NOT NULL REFERENCES consulenti(id),
+  incaricato_id         INT NOT NULL REFERENCES incaricati(id),
   anno                  SMALLINT NOT NULL,
   mese                  SMALLINT NOT NULL CHECK (mese BETWEEN 1 AND 12),
   pv_mese               DECIMAL(10,2) NOT NULL DEFAULT 0,
   gv_mese               DECIMAL(10,2) NOT NULL DEFAULT 0,
-  status_al_calcolo     status_consulente NOT NULL,
+  status_al_calcolo     status_incaricato NOT NULL,
   era_attivo            BOOLEAN NOT NULL DEFAULT FALSE,
   provvigione_personale DECIMAL(10,2) NOT NULL DEFAULT 0,
   reddito_residuale     DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -163,25 +163,25 @@ CREATE TABLE provvigioni_mensili (
   stato                 stato_pagamento_prov NOT NULL DEFAULT 'calcolato',
   data_calcolo          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   data_pagamento        TIMESTAMPTZ,
-  UNIQUE(consulente_id, anno, mese)
+  UNIQUE(incaricato_id, anno, mese)
 );
 ```
 
 ### 1.6 Auth e ruoli
 
 - File che legge il ruolo: `web/src/proxy.ts`
-- Meccanismo: colonna `consulenti.ruolo` (valore atteso: `"admin"` o `"consulente"`) + colonna `consulenti.auth_user_id` che collega all'utente Supabase Auth
-- Query/RPC usata da proxy e dashboard: query diretta PostgREST `.from("consulenti").select("ruolo").eq("auth_user_id", user.id).single()`
+- Meccanismo: colonna `incaricati.ruolo` (valore atteso: `"admin"` o `"incaricato"`) + colonna `incaricati.auth_user_id` che collega all'utente Supabase Auth
+- Query/RPC usata da proxy e dashboard: query diretta PostgREST `.from("incaricati").select("ruolo").eq("auth_user_id", user.id).single()`
 - Snippet rilevante (da `web/src/proxy.ts`):
 
 ```typescript
-const { data: consulente } = await supabase
-  .from("consulenti")
+const { data: incaricato } = await supabase
+  .from("incaricati")
   .select("ruolo")
   .eq("auth_user_id", user.id)
   .single();
 
-if (consulente?.ruolo !== "admin") {
+if (incaricato?.ruolo !== "admin") {
   // redirect a /dashboard
 }
 
@@ -206,8 +206,8 @@ Output di `find web/src/app -type f \( -name "*.tsx" -o -name "*.ts" \) | sort`:
 ```
 web/src/app/admin/candidature/CandidatureClient.tsx
 web/src/app/admin/candidature/page.tsx
-web/src/app/admin/consulenti/[id]/page.tsx
-web/src/app/admin/consulenti/page.tsx
+web/src/app/admin/incaricati/[id]/page.tsx
+web/src/app/admin/incaricati/page.tsx
 web/src/app/admin/dashboard/page.tsx
 web/src/app/admin/layout.tsx
 web/src/app/admin/provvigioni/page.tsx
@@ -318,13 +318,13 @@ export async function proxy(request: NextRequest) {
 
   // Protezione /admin: solo ruolo admin
   if (user && pathname.startsWith("/admin")) {
-    const { data: consulente } = await supabase
-      .from("consulenti")
+    const { data: incaricato } = await supabase
+      .from("incaricati")
       .select("ruolo")
       .eq("auth_user_id", user.id)
       .single();
 
-    if (consulente?.ruolo !== "admin") {
+    if (incaricato?.ruolo !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
@@ -340,13 +340,13 @@ export async function proxy(request: NextRequest) {
   if (user && !pathname.startsWith("/admin") && !isPublic) {
     const currentRuolo = request.cookies.get("invinus_ruolo")?.value;
     if (!currentRuolo) {
-      const { data: consulente } = await supabase
-        .from("consulenti")
+      const { data: incaricato } = await supabase
+        .from("incaricati")
         .select("ruolo")
         .eq("auth_user_id", user.id)
         .single();
-      if (consulente) {
-        supabaseResponse.cookies.set("invinus_ruolo", consulente.ruolo ?? "consulente", {
+      if (incaricato) {
+        supabaseResponse.cookies.set("invinus_ruolo", incaricato.ruolo ?? "incaricato", {
           path: "/",
           sameSite: "lax",
           maxAge: 60 * 60 * 8,
@@ -387,12 +387,12 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
 
-  const { data: consulente } = await supabase
-    .from("consulenti")
+  const { data: incaricato } = await supabase
+    .from("incaricati")
     .select("ruolo")
     .eq("auth_user_id", user.id)
     .single();
-  if (consulente?.ruolo !== "admin") {
+  if (incaricato?.ruolo !== "admin") {
     return NextResponse.json({ error: "Accesso riservato ad admin" }, { status: 403 });
   }
 
@@ -437,9 +437,9 @@ File in `web/src/lib/provvigioni/`:
 
 | File | Righe | Descrizione |
 |------|-------|-------------|
-| `types.ts` | 151 | Definisce tutti i tipi TypeScript del dominio: `StatusConsulente`, `Qualifica`, `ConsulenteMese`, `StornoRecord`, `ProvvigioneResult`, `PromozioneResult`, `BatchResult`. Contiene anche costanti: `BONUS_CAR_IMPORTO_EUR = 250.00` (placeholder), `SOGLIA_MINIMA_PAYOUT_EUR = 10.00` |
+| `types.ts` | 151 | Definisce tutti i tipi TypeScript del dominio: `StatusIncaricato`, `Qualifica`, `IncaricatoMese`, `StornoRecord`, `ProvvigioneResult`, `PromozioneResult`, `BatchResult`. Contiene anche costanti: `BONUS_CAR_IMPORTO_EUR = 250.00` (placeholder), `SOGLIA_MINIMA_PAYOUT_EUR = 10.00` |
 | `engine.ts` | 402 | Logica pura senza I/O. Implementa i 6 step del batch: `applicaStorni`, `consolidaGvByLevel` (DFS post-order sull'albero genealogico), `checkAttivita`, `verificaPromozioni`, `calcolaProvvigioni`, `eseguiBatch` (orchestratore in-memory) |
-| `repository.ts` | 221 | Query PostgreSQL tramite `pg.Pool`. Funzioni: `loadQualifiche`, `loadConsulentiMese`, `loadStorni`, `saveProvvigioni` (UPSERT idempotente), `savePromozioni`, `updateAttiviConsulenti` |
+| `repository.ts` | 221 | Query PostgreSQL tramite `pg.Pool`. Funzioni: `loadQualifiche`, `loadIncaricatiMese`, `loadStorni`, `saveProvvigioni` (UPSERT idempotente), `savePromozioni`, `updateAttiviIncaricati` |
 | `index.ts` | 63 | Entry point del job. `calcolaProvvigioniMensili` orchestra repository + engine in una singola transazione con COMMIT/ROLLBACK |
 
 ---
@@ -475,10 +475,10 @@ Rilevato da produzione Supabase il 2026-04-16:
 | cantina_personale | cantina_personale_read | SELECT | authenticated | true | — |
 | cantine_fornitrici | cantine_fornitrici_read | SELECT | authenticated | true | — |
 | clienti | clienti_read | SELECT | authenticated | true | — |
-| consulente_vini_preferiti | modify_own | ALL | authenticated | `consulente_id = (SELECT consulenti.id FROM consulenti WHERE consulenti.auth_user_id = auth.uid())` | — |
-| consulente_vini_preferiti | select_all_authenticated | SELECT | authenticated | true | — |
-| consulente_vini_preferiti | select_public | SELECT | anon | true | — |
-| consulenti | consulenti_read | SELECT | authenticated | true | — |
+| incaricato_vini_preferiti | modify_own | ALL | authenticated | `incaricato_id = (SELECT incaricati.id FROM incaricati WHERE incaricati.auth_user_id = auth.uid())` | — |
+| incaricato_vini_preferiti | select_all_authenticated | SELECT | authenticated | true | — |
+| incaricato_vini_preferiti | select_public | SELECT | anon | true | — |
+| incaricati | incaricati_read | SELECT | authenticated | true | — |
 | eventi | eventi_read | SELECT | authenticated | true | — |
 | eventi_partecipanti | eventi_partecipanti_read | SELECT | authenticated | true | — |
 | interazioni_crm | interazioni_crm_read | SELECT | authenticated | true | — |
@@ -494,10 +494,10 @@ Rilevato da produzione Supabase il 2026-04-16:
 | storni_pv | storni_pv_read | SELECT | authenticated | true | — |
 
 **Osservazioni:**
-- 24 policy totali, quasi tutte SELECT permissive (`true`) per ruolo `authenticated` — nessun filtro row-level per consulente (chiunque sia loggato vede tutti i dati)
+- 24 policy totali, quasi tutte SELECT permissive (`true`) per ruolo `authenticated` — nessun filtro row-level per incaricato (chiunque sia loggato vede tutti i dati)
 - Unica policy INSERT attiva: `candidature.insert_public` con check `stato='in_attesa' AND note_admin IS NULL` (accesso pubblico/anon)
-- Unica policy con filtro row-level reale: `consulente_vini_preferiti.modify_own`
-- **Nessuna policy di scrittura (INSERT/UPDATE/DELETE) sulle tabelle operative** (`ordini`, `consulenti`, `clienti`, ecc.) — le scritture passano tutte per RPC con `SECURITY DEFINER`
+- Unica policy con filtro row-level reale: `incaricato_vini_preferiti.modify_own`
+- **Nessuna policy di scrittura (INSERT/UPDATE/DELETE) sulle tabelle operative** (`ordini`, `incaricati`, `clienti`, ecc.) — le scritture passano tutte per RPC con `SECURITY DEFINER`
 
 ---
 
@@ -507,7 +507,8 @@ Lista file in `db/migrations/`:
 
 | File | Descrizione |
 |------|-------------|
-| `001_security_fixes.sql` | Fix Supabase Security Advisor (2026-03-29 + aggiornamento 2026-03-31): SET search_path sulle funzioni SECURITY DEFINER (`get_team_consulente`, `get_dashboard_consulente`, `crea_ordine_consulente`); pg_trgm spostata in schema `extensions`; policy RLS `insert_public` su `candidature` ristretta a `stato = 'in_attesa' AND note_admin IS NULL` |
+| `001_security_fixes.sql` | Fix Supabase Security Advisor (2026-03-29 + aggiornamento 2026-03-31): SET search_path sulle funzioni SECURITY DEFINER (`get_team_incaricato`, `get_dashboard_incaricato`, `crea_ordine_incaricato`); pg_trgm spostata in schema `extensions`; policy RLS `insert_public` su `candidature` ristretta a `stato = 'in_attesa' AND note_admin IS NULL` |
+| `003_rename_consulente_incaricato.sql` | M1.5 (2026-04-17): rename completo consulente→incaricato. Enum types, tabelle `consulenti`→`incaricati` e `consulente_vini_preferiti`→`incaricato_vini_preferiti`, colonne `*_consulente_id`→`*_incaricato_id`, indici, funzioni RPC, policy RLS. |
 
 ---
 
@@ -546,7 +547,7 @@ Discrepanze docs vs codice reale:
 
 3. **`web/src/app/page.tsx` è solo un redirect** — Nessuna landing page pubblica (la home reindirizza direttamente a `/dashboard`). Coerente con la natura CRM del sistema ma in contrasto con il doc 07 che parla di pagine pubbliche.
 
-4. **Stripe non installato** — Il piano compensi prevede pagamenti via Stripe (`stripe_account_id` in `consulenti`, `stripe_payment_id` in `ordini`) ma il pacchetto `stripe` non è in `package.json`.
+4. **Stripe non installato** — Il piano compensi prevede pagamenti via Stripe (`stripe_account_id` in `incaricati`, `stripe_payment_id` in `ordini`) ma il pacchetto `stripe` non è in `package.json`.
 
 5. **Bonus Car importo placeholder** — `BONUS_CAR_IMPORTO_EUR = 250.00` in `types.ts` è esplicitamente un valore placeholder in attesa di decisione con FP (da doc 12 §6).
 
@@ -563,13 +564,13 @@ TODO/FIXME nel codice (da `grep`):
 
 - Autenticazione base Supabase: ✅ (login funzionante, proxy con guard ruolo, cookie `invinus_ruolo`)
 - Catalogo prodotti (CRUD + visualizzazione): ✅ (30 prodotti seed, pagina `/catalogo` con client component)
-- Dashboard consulente PV/GV: ✅ (4 card PV/GV/status/guadagni, RPC `get_dashboard_consulente`, referral link)
+- Dashboard incaricato PV/GV: ✅ (4 card PV/GV/status/guadagni, RPC `get_dashboard_incaricato`, referral link)
 - Albero team: ✅ (pagina `/team` con `TeamClient.tsx`)
-- Creazione ordine con PV: ✅ (pagina `/ordini` con `OrdiniClient.tsx` + `actions.ts`, RPC `crea_ordine_consulente`)
-- Pannello admin (4 pagine): ✅ (candidature, consulenti, dashboard, provvigioni — tutte presenti)
+- Creazione ordine con PV: ✅ (pagina `/ordini` con `OrdiniClient.tsx` + `actions.ts`, RPC `crea_ordine_incaricato`)
+- Pannello admin (4 pagine): ✅ (candidature, incaricati, dashboard, provvigioni — tutte presenti)
 - Calcolo provvigioni batch: 🟡 (engine completo e testabile, bloccato da ENOTFOUND su Vercel — causa DATABASE_URL direct invece di pooler)
 - Pagina /ref/\<slug\>: ✅ (`web/src/app/ref/[code]/page.tsx` + `CandidaturaForm.tsx` esistono)
-- Registrazione cliente: 🟡 (gestione clienti presente in area consulente, flusso registrazione pubblica non autonomo)
+- Registrazione cliente: 🟡 (gestione clienti presente in area incaricato, flusso registrazione pubblica non autonomo)
 - Registrazione incaricato con KYC: 🟡 (form candidatura su `/ref/[code]` presente, flusso approvazione admin presente, KYC documentale non implementato)
 - Wallet incaricato: ❌ (nessuna pagina wallet — Stripe non integrato)
 - Area documenti aziendali: ❌ (nessuna pagina documenti)
