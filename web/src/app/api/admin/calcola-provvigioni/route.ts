@@ -22,6 +22,13 @@ export async function POST(req: NextRequest) {
   if (!dbUrl) {
     return NextResponse.json({ error: "DATABASE_URL non configurato" }, { status: 500 });
   }
+  // DIAGNOSTICA TEMPORANEA — da rimuovere dopo
+  const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':***PWD***@');
+  console.log('[DEBUG] DATABASE_URL received by Vercel:', maskedUrl);
+  console.log('[DEBUG] DATABASE_URL length:', dbUrl.length);
+  console.log('[DEBUG] DATABASE_URL starts with:', dbUrl.substring(0, 50));
+  console.log('[DEBUG] DATABASE_URL ends with:', dbUrl.substring(dbUrl.length - 30));
+  // FINE DIAGNOSTICA
 
   const { anno, mese } = await req.json() as { anno: number; mese: number };
   if (!anno || !mese) {
