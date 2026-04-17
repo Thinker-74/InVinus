@@ -14,15 +14,15 @@ export default async function ReferralPage({ params }: { params: Promise<{ code:
   const { code } = await params;
   const supabase = await createClient();
 
-  const { data: rows } = await supabase.rpc("get_consulente_by_referral", { p_code: code });
+  const { data: rows } = await supabase.rpc("get_incaricato_by_referral", { p_code: code });
   const consulente = rows?.[0];
   if (!consulente) notFound();
 
   // Vini preferiti (se configurati) o catalogo completo
   const { data: preferiti } = await supabase
-    .from("consulente_vini_preferiti")
+    .from("incaricato_vini_preferiti")
     .select("prodotto_id, ordine")
-    .eq("consulente_id", consulente.id)
+    .eq("incaricato_id", consulente.id)
     .order("ordine");
 
   const haPreferiti = (preferiti ?? []).length > 0;
@@ -85,7 +85,7 @@ export default async function ReferralPage({ params }: { params: Promise<{ code:
 
           {/* Testo */}
           <div className="text-center sm:text-left">
-            <p className="text-sm mb-1" style={{ color: "var(--color-muted)" }}>Consulente InVinus</p>
+            <p className="text-sm mb-1" style={{ color: "var(--color-muted)" }}>Incaricato InVinus</p>
             <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-playfair)", color: "var(--color-gold)" }}>
               {consulente.nome} {consulente.cognome}
             </h1>
@@ -187,7 +187,7 @@ export default async function ReferralPage({ params }: { params: Promise<{ code:
               Scopri l&apos;opportunità InVinus
             </h2>
             <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
-              Diventa consulente InVinus: seleziona vini italiani d&apos;eccellenza, organizza serate di degustazione,
+              Diventa incaricato InVinus: seleziona vini italiani d&apos;eccellenza, organizza serate di degustazione,
               costruisci il tuo network. Guadagni basati esclusivamente sulla tua attività.
             </p>
           </div>
@@ -208,7 +208,7 @@ export default async function ReferralPage({ params }: { params: Promise<{ code:
         </section>
 
         <footer className="text-center text-xs pb-8" style={{ color: "var(--color-muted)" }}>
-          © InVinus · I guadagni dipendono esclusivamente dall&apos;attività di ogni singolo consulente.
+          © InVinus · I guadagni dipendono esclusivamente dall&apos;attività di ogni singolo incaricato.
         </footer>
       </main>
     </div>

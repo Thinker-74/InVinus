@@ -17,7 +17,7 @@ const NAV_ITEMS = [
 
 const ADMIN_ITEMS = [
   { href: "/admin/dashboard",   label: "Dashboard Admin" },
-  { href: "/admin/consulenti",  label: "Gestione Consulenti" },
+  { href: "/admin/incaricati",   label: "Gestione Incaricati" },
   { href: "/admin/candidature", label: "Candidature" },
   { href: "/admin/provvigioni", label: "Calcolo Provvigioni" },
 ];
@@ -105,7 +105,7 @@ function UserFooter({ profilo }: { profilo: Profilo | null }) {
             )}
           </div>
           <p className="text-xs truncate" style={{ color: "var(--color-muted)" }}>
-            {isAdmin ? "Amministratore" : "Consulente"}
+            {isAdmin ? "Amministratore" : "Incaricato"}
           </p>
         </div>
         <button
@@ -130,7 +130,7 @@ export function Sidebar() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       supabase
-        .from("consulenti")
+        .from("incaricati")
         .select("nome, cognome, ruolo")
         .eq("auth_user_id", user.id)
         .single()

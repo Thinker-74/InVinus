@@ -10,7 +10,7 @@ export async function aggiungiCliente(
   telefono: string
 ): Promise<{ success: true; id: number } | { success: false; error: string }> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("aggiungi_cliente_consulente", {
+  const { data, error } = await supabase.rpc("aggiungi_cliente_incaricato", {
     p_nome:     nome,
     p_cognome:  cognome,
     p_email:    email,

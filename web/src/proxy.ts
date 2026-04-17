@@ -42,6 +42,13 @@ export async function proxy(request: NextRequest) {
     pathname === "/" ||
     pathname.startsWith("/ref/");
 
+  // Redirect permanente bookmark /admin/consulenti → /admin/incaricati
+  if (pathname.startsWith("/admin/consulenti")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace("/admin/consulenti", "/admin/incaricati");
+    return NextResponse.redirect(url, { status: 301 });
+  }
+
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -56,13 +63,13 @@ export async function proxy(request: NextRequest) {
 
   // Protezione /admin: solo ruolo admin
   if (user && pathname.startsWith("/admin")) {
-    const { data: consulente } = await supabase
-      .from("consulenti")
+    const { data: incaricato } = await supabase
+      .from("incaricati")
       .select("ruolo")
       .eq("auth_user_id", user.id)
       .single();
 
-    if (consulente?.ruolo !== "admin") {
+    if (incaricato?.ruolo !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
@@ -76,18 +83,18 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // Per utenti autenticati non-admin, assicura che il cookie ruolo rifletta "consulente"
+  // Per utenti autenticati non-admin, assicura che il cookie ruolo rifletta "incaricato"
   if (user && !pathname.startsWith("/admin") && !isPublic) {
     const currentRuolo = request.cookies.get("invinus_ruolo")?.value;
     if (!currentRuolo) {
       // Fetch ruolo una volta sola e cachelo in cookie
-      const { data: consulente } = await supabase
-        .from("consulenti")
+      const { data: incaricato } = await supabase
+        .from("incaricati")
         .select("ruolo")
         .eq("auth_user_id", user.id)
         .single();
-      if (consulente) {
-        supabaseResponse.cookies.set("invinus_ruolo", consulente.ruolo ?? "consulente", {
+      if (incaricato) {
+        supabaseResponse.cookies.set("invinus_ruolo", incaricato.ruolo ?? "incaricato", {
           path: "/",
           sameSite: "lax",
           maxAge: 60 * 60 * 8,

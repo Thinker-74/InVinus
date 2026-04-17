@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Consulente = {
+type Incaricato = {
   id: number; nome: string; cognome: string; status: string; ruolo: string;
   pv_mese: number; gv_mese: number;
   sponsor_nome: string | null; sponsor_cognome: string | null;
@@ -24,8 +24,8 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export default function AdminConsulentiPage() {
-  const [dati, setDati]           = useState<Consulente[]>([]);
+export default function AdminIncaricatiPage() {
+  const [dati, setDati]           = useState<Incaricato[]>([]);
   const [filtroStatus, setFiltro] = useState("tutti");
   const [loading, setLoading]     = useState(true);
   const router = useRouter();
@@ -33,8 +33,8 @@ export default function AdminConsulentiPage() {
   useEffect(() => {
     const now = new Date();
     const supabase = createClient();
-    supabase.rpc("get_admin_consulenti", { p_anno: now.getFullYear(), p_mese: now.getMonth() + 1 })
-      .then(({ data }) => { setDati((data as Consulente[]) ?? []); setLoading(false); });
+    supabase.rpc("get_admin_incaricati", { p_anno: now.getFullYear(), p_mese: now.getMonth() + 1 })
+      .then(({ data }) => { setDati((data as Incaricato[]) ?? []); setLoading(false); });
   }, []);
 
   const filtrati = filtroStatus === "tutti"
@@ -45,10 +45,10 @@ export default function AdminConsulentiPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-playfair)", color: "var(--color-pearl)" }}>
-          Rete Consulenti
+          Rete Incaricati
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
-          {dati.length} consulenti totali · {dati.filter((c) => c.attivo).length} attivi questo mese
+          {dati.length} incaricati totali · {dati.filter((c) => c.attivo).length} attivi questo mese
         </p>
       </div>
 
@@ -76,20 +76,20 @@ export default function AdminConsulentiPage() {
       {loading ? (
         <p className="text-sm" style={{ color: "var(--color-muted)" }}>Caricamento...</p>
       ) : filtrati.length === 0 ? (
-        <p className="text-sm" style={{ color: "var(--color-muted)" }}>Nessun consulente trovato.</p>
+        <p className="text-sm" style={{ color: "var(--color-muted)" }}>Nessun incaricato trovato.</p>
       ) : (
         <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--color-border)" }}>
           {/* Header */}
           <div className="hidden lg:grid gap-3 px-4 py-2 text-xs font-medium"
             style={{ gridTemplateColumns: "1fr 6rem 4rem 4rem 1fr 6rem", backgroundColor: "var(--color-ash)", color: "var(--color-muted)" }}>
-            <span>Consulente</span><span>Status</span><span className="text-right">PV</span>
+            <span>Incaricato</span><span>Status</span><span className="text-right">PV</span>
             <span className="text-right">GV</span><span>Sponsor</span><span>Iscritto</span>
           </div>
 
           {filtrati.map((c, i) => (
             <div
               key={c.id}
-              onClick={() => router.push(`/admin/consulenti/${c.id}`)}
+              onClick={() => router.push(`/admin/incaricati/${c.id}`)}
               className="grid grid-cols-2 lg:grid gap-2 lg:gap-3 px-4 py-3 text-sm cursor-pointer hover:opacity-80 transition-opacity"
               style={{
                 gridTemplateColumns: "1fr 6rem 4rem 4rem 1fr 6rem",

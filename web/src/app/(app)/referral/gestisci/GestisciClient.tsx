@@ -119,7 +119,7 @@ export default function GestisciClient({
     if (upErr) { setErrore(upErr.message); setUploadingFoto(false); return; }
     const url = `${SUPABASE_URL}/storage/v1/object/public/profili/${path}?t=${Date.now()}`;
     // Salva subito foto_url su DB
-    await supabase.rpc("aggiorna_profilo_consulente", {
+    await supabase.rpc("aggiorna_profilo_incaricato", {
       p_bio: bio, p_messaggio_referral: messaggio, p_specialita: specialita, p_foto_url: url,
     });
     setFotoUrl(url);
@@ -140,7 +140,7 @@ export default function GestisciClient({
     startTransition(async () => {
       const supabase = createClient();
       const [r1, r2] = await Promise.all([
-        supabase.rpc("aggiorna_profilo_consulente", {
+        supabase.rpc("aggiorna_profilo_incaricato", {
           p_bio: bio, p_messaggio_referral: messaggio, p_specialita: specialita,
         }),
         supabase.rpc("set_vini_preferiti", { p_prodotto_ids: selezionati }),

@@ -7,28 +7,28 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export default async function AdminConsulentePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminIncaricatoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const consulenteId = parseInt(id);
-  if (isNaN(consulenteId)) notFound();
+  const incaricatoId = parseInt(id);
+  if (isNaN(incaricatoId)) notFound();
 
   const supabase = await createClient();
   const now = new Date();
   const anno = now.getFullYear();
   const mese = now.getMonth() + 1;
 
-  const { data: consulente } = await supabase
-    .from("consulenti")
+  const { data: incaricato } = await supabase
+    .from("incaricati")
     .select("id, nome, cognome, status, status_max, email, telefono, data_iscrizione, ruolo, link_referral, attivo")
-    .eq("id", consulenteId)
+    .eq("id", incaricatoId)
     .single();
-  if (!consulente) notFound();
+  if (!incaricato) notFound();
 
   const [{ data: team }, { data: ordini }] = await Promise.all([
-    supabase.rpc("get_team_consulente", { p_consulente_id: consulenteId, p_anno: anno, p_mese: mese }),
+    supabase.rpc("get_team_incaricato", { p_incaricato_id: incaricatoId, p_anno: anno, p_mese: mese }),
     supabase.from("ordini")
       .select("pv_generati, totale, data")
-      .eq("consulente_id", consulenteId)
+      .eq("incaricato_id", incaricatoId)
       .eq("stato", "pagato")
       .gte("data", `${anno}-${String(mese).padStart(2, "0")}-01`)
       .order("data", { ascending: false })
@@ -41,26 +41,26 @@ export default async function AdminConsulentePage({ params }: { params: Promise<
 
   return (
     <div className="max-w-3xl space-y-6">
-      <Link href="/admin/consulenti" className="text-xs flex items-center gap-1 w-fit hover:opacity-70"
+      <Link href="/admin/incaricati" className="text-xs flex items-center gap-1 w-fit hover:opacity-70"
         style={{ color: "var(--color-muted)" }}>
-        ← Consulenti
+        ← Incaricati
       </Link>
 
       <div>
         <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-playfair)", color: "var(--color-pearl)" }}>
-          {consulente.nome} {consulente.cognome}
+          {incaricato.nome} {incaricato.cognome}
         </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--color-gold)" }}>{consulente.status}</p>
+        <p className="text-sm mt-1" style={{ color: "var(--color-gold)" }}>{incaricato.status}</p>
       </div>
 
       {/* Info */}
       <div className="rounded-xl p-5 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm"
         style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
         {[
-          ["Email", consulente.email], ["Telefono", consulente.telefono ?? "—"],
-          ["Iscritto", formatDate(consulente.data_iscrizione)],
-          ["Status max", consulente.status_max], ["Ruolo", consulente.ruolo],
-          ["Referral", consulente.link_referral ?? "—"],
+          ["Email", incaricato.email], ["Telefono", incaricato.telefono ?? "—"],
+          ["Iscritto", formatDate(incaricato.data_iscrizione)],
+          ["Status max", incaricato.status_max], ["Ruolo", incaricato.ruolo],
+          ["Referral", incaricato.link_referral ?? "—"],
         ].map(([label, value]) => (
           <div key={label}>
             <p className="text-xs mb-0.5" style={{ color: "var(--color-muted)" }}>{label}</p>

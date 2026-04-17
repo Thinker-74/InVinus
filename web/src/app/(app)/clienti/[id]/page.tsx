@@ -26,18 +26,18 @@ export default async function ClienteDetailPage({ params }: { params: Promise<{ 
   if (!user) redirect("/login");
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("id")
     .eq("auth_user_id", user.id)
     .single();
   if (!consulente) redirect("/login");
 
-  // Verifica che il cliente appartenga al consulente loggato
+  // Verifica che il cliente appartenga all'incaricato loggato
   const { data: cliente } = await supabase
     .from("clienti")
     .select("id, nome, cognome, email, telefono, segmento, note, data_primo_acquisto, gdpr_consenso")
     .eq("id", clienteId)
-    .eq("consulente_id", consulente.id)
+    .eq("incaricato_id", consulente.id)
     .single();
   if (!cliente) notFound();
 

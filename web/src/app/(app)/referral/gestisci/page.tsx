@@ -11,7 +11,7 @@ export default async function GestisciReferralPage() {
   if (!user) redirect("/login");
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("id, nome, cognome, link_referral, foto_url, bio, messaggio_referral, specialita, status")
     .eq("auth_user_id", user.id)
     .single();
@@ -24,9 +24,9 @@ export default async function GestisciReferralPage() {
       .eq("disponibile", true)
       .order("nome"),
     supabase
-      .from("consulente_vini_preferiti")
+      .from("incaricato_vini_preferiti")
       .select("prodotto_id, ordine")
-      .eq("consulente_id", consulente.id)
+      .eq("incaricato_id", consulente.id)
       .order("ordine"),
   ]);
 

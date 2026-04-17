@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("ruolo")
     .eq("auth_user_id", user.id)
     .single();

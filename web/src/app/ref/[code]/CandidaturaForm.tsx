@@ -22,7 +22,7 @@ export default function CandidaturaForm({ referralCode }: { referralCode: string
     setErrore("");
     startTransition(async () => {
       const supabase = createClient();
-      const { error } = await supabase.rpc("candida_consulente", {
+      const { error } = await supabase.rpc("candida_incaricato", {
         p_nome:          nome.trim(),
         p_cognome:       cognome.trim(),
         p_email:         email.trim(),
@@ -90,7 +90,7 @@ export default function CandidaturaForm({ referralCode }: { referralCode: string
 
       <div>
         <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
-          Perché vuoi diventare consulente InVinus?
+          Perché vuoi diventare incaricato InVinus?
         </label>
         <textarea
           rows={3}

@@ -76,7 +76,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("id, link_referral")
     .eq("auth_user_id", user.id)
     .single();
@@ -84,14 +84,14 @@ export default async function DashboardPage() {
   if (!consulente) {
     return (
       <div className="p-6 text-sm" style={{ color: "var(--color-muted)" }}>
-        Nessun consulente associato a questo account.
+        Nessun incaricato associato a questo account.
       </div>
     );
   }
 
   const { data, error } = await supabase
-    .rpc("get_dashboard_consulente", {
-      p_consulente_id: consulente.id,
+    .rpc("get_dashboard_incaricato", {
+      p_incaricato_id: consulente.id,
       p_anno:          anno,
       p_mese:          mese,
     })

@@ -9,7 +9,7 @@ export default async function ClientiPage() {
   if (!user) redirect("/login");
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("id, nome")
     .eq("auth_user_id", user.id)
     .single();
@@ -17,13 +17,13 @@ export default async function ClientiPage() {
   if (!consulente) {
     return (
       <div className="p-6 text-sm" style={{ color: "var(--color-muted)" }}>
-        Nessun consulente associato a questo account.
+        Nessun incaricato associato a questo account.
       </div>
     );
   }
 
   const { data: clienti } = await supabase
-    .rpc("get_clienti_consulente", { p_consulente_id: consulente.id });
+    .rpc("get_clienti_incaricato", { p_incaricato_id: consulente.id });
 
   return (
     <div>

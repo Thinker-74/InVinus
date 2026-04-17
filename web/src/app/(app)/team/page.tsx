@@ -18,7 +18,7 @@ export default async function TeamPage() {
   if (!user) redirect("/login");
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("id, nome")
     .eq("auth_user_id", user.id)
     .single();
@@ -26,14 +26,14 @@ export default async function TeamPage() {
   if (!consulente) {
     return (
       <div className="p-6 text-sm" style={{ color: "var(--color-muted)" }}>
-        Nessun consulente associato a questo account.
+        Nessun incaricato associato a questo account.
       </div>
     );
   }
 
   const { data, error } = await supabase
-    .rpc("get_team_consulente", {
-      p_consulente_id: consulente.id,
+    .rpc("get_team_incaricato", {
+      p_incaricato_id: consulente.id,
       p_anno:          anno,
       p_mese:          mese,
     });
@@ -77,7 +77,7 @@ export default async function TeamPage() {
           style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
         >
           <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-            Non hai ancora consulenti nel tuo team.
+            Non hai ancora incaricati nel tuo team.
           </p>
         </div>
       ) : (

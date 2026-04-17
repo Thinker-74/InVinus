@@ -9,7 +9,7 @@ export default async function OrdiniPage() {
   if (!user) redirect("/login");
 
   const { data: consulente } = await supabase
-    .from("consulenti")
+    .from("incaricati")
     .select("id, nome")
     .eq("auth_user_id", user.id)
     .single();
@@ -17,16 +17,16 @@ export default async function OrdiniPage() {
   if (!consulente) {
     return (
       <div className="p-6 text-sm" style={{ color: "var(--color-muted)" }}>
-        Nessun consulente associato a questo account.
+        Nessun incaricato associato a questo account.
       </div>
     );
   }
 
-  // Ultimi 30 ordini del consulente
+  // Ultimi 30 ordini dell'incaricato
   const { data: ordini } = await supabase
     .from("ordini")
     .select("id, data, stato, tipo, totale, pv_generati, clienti(nome, cognome)")
-    .eq("consulente_id", consulente.id)
+    .eq("incaricato_id", consulente.id)
     .order("data", { ascending: false })
     .limit(30);
 
