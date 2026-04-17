@@ -104,6 +104,12 @@ CREATE TYPE stato_cantina_personale AS ENUM ('IN_CANTINA', 'CONSUMATA', 'REGALAT
 
 CREATE TYPE motivo_storno AS ENUM ('reso_14gg', 'reso_goodwill', 'annullamento');
 
+-- Stati del processo di candidatura a consulente (form /ref/[code])
+CREATE TYPE stato_candidatura AS ENUM ('in_attesa', 'approvata', 'rifiutata');
+
+-- Ruolo per controllo accessi: distingue consulenti standard da amministratori
+CREATE TYPE ruolo_consulente AS ENUM ('consulente', 'admin');
+
 
 -- =============================================================================
 -- TABELLE
@@ -208,6 +214,15 @@ CREATE TABLE consulenti (
   approvato_da              INT REFERENCES consulenti(id),
   approvato_il              TIMESTAMPTZ,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- Collegamento a Supabase Auth (aggiunto ~2026-03 per autenticazione)
+  auth_user_id              UUID UNIQUE,
+  -- Profilo pubblico per la landing personalizzata /ref/[code] (aggiunto ~2026-03)
+  foto_url                  VARCHAR(500),
+  bio                       VARCHAR(1000),
+  messaggio_referral        VARCHAR(500),
+  specialita                VARCHAR(200),
+  -- Ruolo per controllo accessi /admin/* (aggiunto ~2026-03)
+  ruolo                     ruolo_consulente NOT NULL DEFAULT 'consulente',
   -- status_max non può essere inferiore a status corrente
   CONSTRAINT chk_status_max CHECK (status_max >= status)
 );
@@ -228,6 +243,34 @@ CREATE TABLE clienti (
   gdpr_consenso        BOOLEAN NOT NULL DEFAULT FALSE,
   gdpr_data_consenso   TIMESTAMPTZ,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------------------------
+-- Candidature — richieste di iscrizione come consulente (form /ref/[code])
+-- Approvazione manuale admin → crea record in consulenti (no trigger automatico)
+-- ---------------------------------------------------------------------------
+CREATE TABLE candidature (
+  id                    SERIAL PRIMARY KEY,
+  nome                  VARCHAR(100) NOT NULL,
+  cognome               VARCHAR(100) NOT NULL,
+  email                 VARCHAR(200) NOT NULL,       -- senza UNIQUE: duplicati possibili (scelta intenzionale)
+  telefono              VARCHAR(20),
+  motivazione           TEXT,
+  sponsor_referral_code VARCHAR(100) REFERENCES consulenti(link_referral) ON UPDATE CASCADE,
+  stato                 stato_candidatura NOT NULL DEFAULT 'in_attesa',
+  note_admin            TEXT,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------------------------
+-- Vini preferiti consulente — selezione per landing referral personalizzata
+-- PK composita: un consulente ha al massimo un record per vino
+-- ---------------------------------------------------------------------------
+CREATE TABLE consulente_vini_preferiti (
+  consulente_id INT NOT NULL REFERENCES consulenti(id) ON DELETE CASCADE,
+  prodotto_id   INT NOT NULL REFERENCES prodotti(id)   ON DELETE CASCADE,
+  ordine        SMALLINT NOT NULL DEFAULT 0,           -- ordinamento visualizzazione
+  PRIMARY KEY (consulente_id, prodotto_id)
 );
 
 -- ---------------------------------------------------------------------------
@@ -495,6 +538,42 @@ CREATE INDEX idx_cantina_prodotto      ON cantina_personale(prodotto_id);
 -- Interazioni CRM
 CREATE INDEX idx_crm_consulente        ON interazioni_crm(consulente_id);
 CREATE INDEX idx_crm_soggetto          ON interazioni_crm(tipo_soggetto, soggetto_id);
+
+-- Consulenti — ricerca per auth_user_id (proxy.ts e dashboard ad ogni request)
+CREATE INDEX idx_consulenti_auth_user  ON consulenti(auth_user_id);
+
+-- Candidature
+CREATE INDEX idx_candidature_stato     ON candidature(stato);
+CREATE INDEX idx_candidature_email     ON candidature(email);
+
+-- Vini preferiti consulente
+CREATE INDEX idx_vini_pref_consulente  ON consulente_vini_preferiti(consulente_id);
+
+
+-- =============================================================================
+-- FUNZIONI CUSTOM IN PRODUZIONE (body non incluso — vedi task M1.5)
+-- =============================================================================
+-- Le seguenti funzioni esistono su Supabase ma i loro body non sono versionati
+-- in questo file. Recuperare con pg_get_functiondef() per completare la
+-- documentazione (task M1.5 — rename consulente→incaricato coprirà anche questo).
+--
+-- Funzioni presenti al 2026-04-17:
+--   aggiorna_profilo_consulente(p_bio, p_messaggio_referral, p_specialita, p_foto_url)
+--   aggiungi_cliente_consulente(p_nome, p_cognome, p_email, p_telefono)
+--   candida_consulente(p_nome, p_cognome, p_email, p_telefono, p_motivazione, p_referral_code)
+--   crea_ordine_consulente(p_cliente_id, p_tipo, p_righe)
+--   get_admin_consulenti(p_anno, p_mese)
+--   get_admin_kpi(p_anno, p_mese)
+--   get_admin_top_consulenti(p_anno, p_mese, p_limit)
+--   get_admin_trend(p_mesi)
+--   get_clienti_consulente(p_consulente_id)
+--   get_consulente_by_referral(p_code)
+--   get_dashboard_consulente(p_consulente_id, p_anno, p_mese)
+--   get_team_consulente(p_consulente_id, p_anno, p_mese)
+--   rls_auto_enable()
+--   set_referral_code(p_code)
+--   set_vini_preferiti(p_prodotto_ids)
+-- =============================================================================
 
 
 -- =============================================================================
