@@ -68,6 +68,20 @@ Workflow obbligatorio per ogni modifica al DB:
 4. Rigenera i tipi TypeScript: `supabase gen types typescript --linked 2>&1 | tail -n +2 > web/src/types/supabase.ts`
 5. Commit tutto insieme: migration + schema.sql + tipi aggiornati
 
+### Mappa della documentazione
+
+| Cartella | Scope | Cadenza aggiornamento |
+|---|---|---|
+| `docs/01-*` a `docs/14-*` | Documentazione strategica (business, architettura, decisioni di design). Stabile. | Manuale su decisione utente |
+| `docs/progress/*` | Log cronologici di milestone. Immutabili dopo scrittura. | A fine milestone |
+| `CLAUDE.md` | Convenzioni, governance, regole per Claude Code. Living doc. | Quando cambiano convenzioni |
+| `memory/invinus.md` | Stato operativo current (credenziali demo, URL, comandi, gotcha, roadmap con spunte). Living doc. | Fine sessione Claude Code |
+| `memory/CHANGELOG.md` | Diario sessioni aggregato. | Fine sessione |
+| `memory/MEMORY.md` | Indice navigazione memory/ | Manuale |
+| `memory/reference_supabase.md` | Link utili Supabase | Manuale |
+
+Source of truth: in caso di conflitto tra `memory/` e `docs/`, `docs/` vince per decisioni strategiche (architettura, scope milestone), `memory/` vince per stato operativo real-time (cosa è fatto, cosa è aperto).
+
 ### Terminologia ufficiale
 
 La figura venditoriale si chiama **incaricato alle vendite** ai sensi della L.173/2005 e D.Lgs. 114/98.

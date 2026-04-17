@@ -1,7 +1,22 @@
 # 08 — Roadmap di Sviluppo per Claude Code
 
+> Per lo stato real-time e il log sessioni, vedi `memory/invinus.md` e `memory/CHANGELOG.md`.
+
 > Questo documento definisce l'ordine di sviluppo. Ogni step produce output concreto
 > e testabile. Non saltare step: ogni fase si appoggia sulla precedente.
+
+## Stato milestone (aggiornato 2026-04-17)
+
+| Milestone | Stato |
+|-----------|-------|
+| M0 — Fix pooler provvigioni | ✅ |
+| M1 — Allineamento schema.sql con produzione | ✅ |
+| M1.5 — Rename consulente→incaricato | ✅ |
+| M1.9 — Allineamento memory/docs | 🔄 in corso |
+| M2 — RLS policy granulari | prossima |
+| M3–M7 — vedi `memory/invinus.md` §Roadmap | — |
+
+---
 
 ---
 
