@@ -73,14 +73,11 @@ Workflow obbligatorio per ogni modifica al DB:
 | Cartella | Scope | Cadenza aggiornamento |
 |---|---|---|
 | `docs/01-*` a `docs/14-*` | Documentazione strategica (business, architettura, decisioni di design). Stabile. | Manuale su decisione utente |
+| `docs/STATO.md` | Stato operativo current (credenziali demo, URL, comandi, gotcha, roadmap con spunte). Living doc, DENTRO il repo. | Fine sessione Claude Code |
 | `docs/progress/*` | Log cronologici di milestone. Immutabili dopo scrittura. | A fine milestone |
 | `CLAUDE.md` | Convenzioni, governance, regole per Claude Code. Living doc. | Quando cambiano convenzioni |
-| `memory/invinus.md` | Stato operativo current (credenziali demo, URL, comandi, gotcha, roadmap con spunte). Living doc. | Fine sessione Claude Code |
-| `memory/CHANGELOG.md` | Diario sessioni aggregato. | Fine sessione |
-| `memory/MEMORY.md` | Indice navigazione memory/ | Manuale |
-| `memory/reference_supabase.md` | Link utili Supabase | Manuale |
 
-Source of truth: in caso di conflitto tra `memory/` e `docs/`, `docs/` vince per decisioni strategiche (architettura, scope milestone), `memory/` vince per stato operativo real-time (cosa è fatto, cosa è aperto).
+`memory/` (cartella `~/.claude/projects/...`) è riservata a Claude Code per memoria di sessione personale (cronologia, appunti volatili). NON è source of truth per il progetto — se un'informazione serve a Francesco, a un altro dev, o sopravvive a un reinstall, deve stare in `docs/` o `CLAUDE.md`.
 
 ### Terminologia ufficiale
 

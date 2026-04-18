@@ -1,6 +1,6 @@
 # 08 — Roadmap di Sviluppo per Claude Code
 
-> Per lo stato real-time e il log sessioni, vedi `memory/invinus.md` e `memory/CHANGELOG.md`.
+> Per lo stato real-time e le note operative correnti vedi `docs/STATO.md`. Per log cronologico milestone vedi `docs/progress/`.
 
 > Questo documento definisce l'ordine di sviluppo. Ogni step produce output concreto
 > e testabile. Non saltare step: ogni fase si appoggia sulla precedente.
