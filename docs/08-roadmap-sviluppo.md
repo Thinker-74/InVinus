@@ -302,3 +302,43 @@ Esempio: "Per la cena di sabato di Marco (ama i rossi toscani, budget 80€):
 Chianti Classico + Rosso di Montalcino + Poggio Torto. [Ordina box →]"
 
 **Dipendenze:** Use case LLM UC-1 e UC-4 (doc 11) + magazzino operativo + profili cliente
+
+---
+
+## Dettaglio milestone M2–M8
+
+### M4 — Registrazione sdoppiata
+
+Separazione del flusso di registrazione in due percorsi distinti:
+- **Nuovo incaricato** (si iscrive volontariamente): form completo con selezione sponsor
+- **Cliente finale**: form semplificato senza struttura network
+
+Nota 2026-04-17: include la gestione del flusso onboarding per incaricati esistenti importati (vedi M8). Richiede:
+- Endpoint `/onboarding/[token]` che valida token monouso
+- Form pre-compilato con dati importati (nome, cognome, referral code, sponsor)
+- Impostazione credenziali (email, password) al primo accesso
+- Trigger auto-passaggio da "in_onboarding" a "attivo" al completamento profilo + KYC approvato
+
+### M5 — KYC + tesserino L.173/2005
+
+Verifica identità incaricati e generazione tesserino agente ai sensi della L.173/2005.
+
+Nota 2026-04-17: supporta modalità self-service — upload documenti direttamente dall'incaricato (non dall'azienda). Requisiti:
+- Bucket Supabase Storage privato per documenti identità
+- URL firmati a scadenza per accesso controllato
+- Stati documento: "caricato" → "in verifica" → "approvato" / "rifiutato con motivazione"
+- Approvazione admin prima della piena operatività (sblocco provvigioni, accesso avanzato)
+
+### M8 — Migrazione dati go-live
+
+Import degli incaricati esistenti dal sistema legacy al momento del go-live.
+
+### Strategia onboarding (decisa 2026-04-17)
+
+- Import d'ufficio: gli incaricati esistenti vengono importati con stato iniziale "in_onboarding" (nuovo valore da aggiungere all'enum `stato_account_incaricato` in M8)
+- Nuova colonna `incaricati.onboarding_scadenza DATE` per deadline completamento profilo
+- Grace period: 30 giorni dal primo accesso per completare profilo + caricare documenti KYC
+- Durante grace period: l'incaricato può operare (creare ordini, fare vendite) ma le provvigioni maturate si accumulano senza essere bonificate finché KYC non è approvato
+- Scaduto il grace period senza KYC completo: account passa a "sospeso", no accesso alle funzionalità operative fino a sblocco admin
+- Privacy documenti: caricati dall'incaricato stesso in Supabase Storage (bucket privato, URL firmati a scadenza). L'azienda NON possiede i documenti originali all'import
+- Link di onboarding con token monouso a scadenza per evitare accessi non autorizzati (es. email inoltrata a terzi)
