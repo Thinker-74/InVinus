@@ -398,6 +398,7 @@ export type Database = {
           attivo: boolean
           auth_user_id: string | null
           bio: string | null
+          candidatura_id: number | null
           codice_fiscale: string | null
           cognome: string
           created_at: string
@@ -427,6 +428,7 @@ export type Database = {
           attivo?: boolean
           auth_user_id?: string | null
           bio?: string | null
+          candidatura_id?: number | null
           codice_fiscale?: string | null
           cognome: string
           created_at?: string
@@ -456,6 +458,7 @@ export type Database = {
           attivo?: boolean
           auth_user_id?: string | null
           bio?: string | null
+          candidatura_id?: number | null
           codice_fiscale?: string | null
           cognome?: string
           created_at?: string
@@ -492,6 +495,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "incaricati"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incaricati_candidatura_id_fkey"
+            columns: ["candidatura_id"]
+            isOneToOne: false
+            referencedRelation: "candidature"
             referencedColumns: ["id"]
           },
         ]
@@ -1114,6 +1124,84 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_all_incaricati_full: {
+        Args: never
+        Returns: {
+          approvato_da: number | null
+          approvato_il: string | null
+          attivo: boolean
+          auth_user_id: string | null
+          bio: string | null
+          candidatura_id: number | null
+          codice_fiscale: string | null
+          cognome: string
+          created_at: string
+          data_iscrizione: string
+          data_ultimo_status_change: string | null
+          email: string
+          formazione_completata: boolean
+          foto_url: string | null
+          gv_mese_corrente: number
+          id: number
+          link_referral: string | null
+          messaggio_referral: string | null
+          nome: string
+          pv_mese_corrente: number
+          ruolo: Database["public"]["Enums"]["ruolo_utente"]
+          specialita: string | null
+          sponsor_id: number | null
+          stato_account: Database["public"]["Enums"]["stato_account_incaricato"]
+          status: Database["public"]["Enums"]["status_incaricato"]
+          status_max: Database["public"]["Enums"]["status_incaricato"]
+          stripe_account_id: string | null
+          telefono: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "incaricati"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_get_incaricato_full: {
+        Args: { p_incaricato_id: number }
+        Returns: {
+          approvato_da: number | null
+          approvato_il: string | null
+          attivo: boolean
+          auth_user_id: string | null
+          bio: string | null
+          candidatura_id: number | null
+          codice_fiscale: string | null
+          cognome: string
+          created_at: string
+          data_iscrizione: string
+          data_ultimo_status_change: string | null
+          email: string
+          formazione_completata: boolean
+          foto_url: string | null
+          gv_mese_corrente: number
+          id: number
+          link_referral: string | null
+          messaggio_referral: string | null
+          nome: string
+          pv_mese_corrente: number
+          ruolo: Database["public"]["Enums"]["ruolo_utente"]
+          specialita: string | null
+          sponsor_id: number | null
+          stato_account: Database["public"]["Enums"]["stato_account_incaricato"]
+          status: Database["public"]["Enums"]["status_incaricato"]
+          status_max: Database["public"]["Enums"]["status_incaricato"]
+          stripe_account_id: string | null
+          telefono: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "incaricati"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       aggiorna_profilo_incaricato: {
         Args: {
           p_bio: string
@@ -1147,6 +1235,8 @@ export type Database = {
         Args: { p_cliente_id: number; p_righe: Json; p_tipo: string }
         Returns: number
       }
+      current_incaricato_id: { Args: never; Returns: number }
+      current_is_admin: { Args: never; Returns: boolean }
       get_admin_incaricati: {
         Args: { p_anno: number; p_mese: number }
         Returns: {
@@ -1245,6 +1335,45 @@ export type Database = {
           specialita: string
           status: string
         }[]
+      }
+      get_my_profile: {
+        Args: never
+        Returns: {
+          approvato_da: number | null
+          approvato_il: string | null
+          attivo: boolean
+          auth_user_id: string | null
+          bio: string | null
+          candidatura_id: number | null
+          codice_fiscale: string | null
+          cognome: string
+          created_at: string
+          data_iscrizione: string
+          data_ultimo_status_change: string | null
+          email: string
+          formazione_completata: boolean
+          foto_url: string | null
+          gv_mese_corrente: number
+          id: number
+          link_referral: string | null
+          messaggio_referral: string | null
+          nome: string
+          pv_mese_corrente: number
+          ruolo: Database["public"]["Enums"]["ruolo_utente"]
+          specialita: string | null
+          sponsor_id: number | null
+          stato_account: Database["public"]["Enums"]["stato_account_incaricato"]
+          status: Database["public"]["Enums"]["status_incaricato"]
+          status_max: Database["public"]["Enums"]["status_incaricato"]
+          stripe_account_id: string | null
+          telefono: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "incaricati"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_team_incaricato: {
         Args: { p_anno: number; p_incaricato_id: number; p_mese: number }

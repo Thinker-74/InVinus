@@ -17,11 +17,9 @@ export default async function AdminIncaricatoPage({ params }: { params: Promise<
   const anno = now.getFullYear();
   const mese = now.getMonth() + 1;
 
-  const { data: incaricato } = await supabase
-    .from("incaricati")
-    .select("id, nome, cognome, status, status_max, email, telefono, data_iscrizione, ruolo, link_referral, attivo")
-    .eq("id", incaricatoId)
-    .single();
+  const { data: incaricatoRows } = await supabase
+    .rpc("admin_get_incaricato_full", { p_incaricato_id: incaricatoId });
+  const incaricato = incaricatoRows?.[0] ?? null;
   if (!incaricato) notFound();
 
   const [{ data: team }, { data: ordini }] = await Promise.all([
