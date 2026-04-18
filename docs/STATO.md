@@ -5,7 +5,7 @@
 > Per decisioni strategiche vedi docs/01-* a docs/14-* + CLAUDE.md.
 > Per log cronologico milestone vedi docs/progress/.
 
-Ultimo aggiornamento: 2026-04-18 dopo M1.10
+Ultimo aggiornamento: 2026-04-18 dopo M2
 
 ---
 
@@ -110,11 +110,31 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 
 ---
 
-## RLS (stato attuale — pre-M2)
-- SELECT permissiva per `authenticated` su tutte le 21 tabelle
-- INSERT/UPDATE/DELETE: nessuna policy (bloccato per utenti normali)
-- `get_dashboard_incaricato`: SECURITY DEFINER (bypassa RLS per leggere ordini/downline)
-- 8 funzioni RPC rinominate in M1.5; 3 funzioni body-only aggiornate (get_admin_kpi, set_referral_code, set_vini_preferiti)
+## RLS (stato attuale — post-M2, migration 004)
+
+### Architettura policy
+- **21 tabelle** con policy granulari: anon / incaricato (solo propri) / admin (tutto)
+- Pattern: 2 policy PERMISSIVE per tabella — `inc_*` (predicato su `incaricato_id = current_incaricato_id()`) + `admin_all` (`current_is_admin()` FOR ALL)
+- Reference tables (prodotti, regioni, qualifiche, cantine_fornitrici, box_*): `public_read` per anon + authenticated
+
+### Funzioni helper (STABLE, SECURITY DEFINER)
+- `current_incaricato_id()` → INT: risolve auth.uid() → incaricati.id
+- `current_is_admin()` → BOOLEAN: verifica ruolo='admin' per l'utente corrente
+- `get_my_profile()` → SETOF incaricati: profilo completo del proprio incaricato (bypassa column-level REVOKE)
+- `admin_get_incaricato_full(p_incaricato_id)` → SETOF incaricati: dettaglio singolo con colonne sensibili (solo admin)
+- `admin_get_all_incaricati_full()` → SETOF incaricati: lista completa con colonne sensibili (solo admin)
+
+### Column-level privileges su `incaricati`
+- **REVOKE** (7 colonne sensibili): `email`, `telefono`, `codice_fiscale`, `stripe_account_id`, `data_ultimo_status_change`, `approvato_da`, `approvato_il`
+- **GRANT** (22 colonne): tutte le restanti — leggibili da `authenticated` via SELECT diretto
+- Bypass controllato: `get_my_profile()` per area personale, `admin_get_*_full()` per area admin
+
+### Storage
+- Bucket `profili`: policy `profili_public_read_no_listing` — SELECT pubblico con `storage.filename(name) != ''` (blocca listing, mantiene accesso per URL diretto)
+
+### Note di compatibilità
+- `get_dashboard_incaricato`: SECURITY DEFINER (bypassa RLS — invariato da M1.5)
+- 8 funzioni RPC rinominate in M1.5; 3 funzioni body-only aggiornate
 
 ---
 
@@ -142,6 +162,8 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 - Warning Next.js build `outputFileTracingRoot vs turbopack.root`: **RISOLTO** — rimosso `turbopack.root` da next.config.ts (era ridondante)
 - **Terminologia**: figura venditoriale = "incaricato alle vendite" (L.173/2005); tutto il codice usa "incaricato" da M1.5 in poi. `magazzino_consulente` e `prezzo_consulente` sono eccezioni intenzionali (attributi di prodotto/tabella logistica, non riferimenti alla persona).
 - **Supabase MCP operativo**: `.mcp.json` in project root (transport `http`, project_ref scoped). MCP attivo — Claude Code esegue SQL in autonomia senza copia-incolla.
+- **Admin RPC per colonne sensibili**: `/admin/incaricati` usa `admin_get_all_incaricati_full()`, `/admin/incaricati/[id]` usa `admin_get_incaricato_full(p_incaricato_id)` — entrambe SECURITY DEFINER, bypass column-level REVOKE.
+- **gen types**: comando corretto post-M2: `supabase gen types typescript --linked 2>&1 | grep -v "^A new version\|^We recommend\|^Initialising\|^Running" > web/src/types/supabase.ts` (filtra righe CLI non-TS)
 
 ---
 
@@ -154,7 +176,7 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 | M1.5 | Rename consulente→incaricato (DB, TS, UI) | ✅ |
 | M1.9 | Allineamento memory/docs (scope chiarito) | ✅ |
 | M1.10 | docs/STATO.md come source of truth in-repo | ✅ |
-| M2 | RLS policy granulari per incaricato/admin su auth_user_id | prossima |
+| M2 | RLS policy granulari per incaricato/admin su auth_user_id | ✅ completata 2026-04-18 |
 | M3 | Referral finalizzato (2 CTA: cliente/incaricato) | — |
 | M4 | Registrazione sdoppiata | — |
 | M5 | KYC + tesserino L.173/2005 | — |
