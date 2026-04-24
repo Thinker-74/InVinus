@@ -86,6 +86,16 @@ Nel codice, schema DB, RPC e UI il termine è uniformemente **incaricato**.
 Non usare "consulente" in nuovo codice.
 I log storici in `docs/progress/` restano immutati (record cronologico).
 
+## Workflow milestone
+
+Per ogni nuova milestone:
+
+1. **Inizio**: usa `/go` per caricare stato attuale
+2. **Pianificazione**: per milestone complesse usa `claude-mem:make-plan` o `superpowers:writing-plans`
+3. **Sicurezza**: per milestone critiche (sicurezza, schema DB, provvigioni) aggiungi `security-review` prima del merge
+4. **Review**: per ogni PR merge usa `/review` e `superpowers:verification-before-completion`
+5. **Chiusura**: a fine sessione usa `/checkpoint` (mid) o `/exit` (end)
+
 ## Regole di contesto
 - Tutti i valori monetari sono in EUR
 - PV = Punti Volume (vendite personali + autoconsumo)

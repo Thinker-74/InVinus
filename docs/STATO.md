@@ -187,6 +187,18 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 
 ---
 
+## Punti aperti
+
+- **M3 (referral finalizzato 2 CTA) — SOSPESA** in attesa di sessione con Francesco per decisioni UX/prodotto. Brainstorming avviato ma fermato dopo Domanda 1 (posizionamento CTA). Quando si riprende, partire dalle 5 domande impostate: posizionamento CTA, wording, flusso post-click cliente, flusso post-click incaricato, tracciamento attribuzione referral.
+
+---
+
+## Prossimi passi
+
+- **Prima ripresa M3**: sessione con Francesco (CEO) presente. Agenda: (a) config crm.invinus.it DNS Vercel con lui, (b) set NEXT_PUBLIC_SITE_URL a `https://crm.invinus.it`, (c) decisioni UX M3 sulle 5 domande (posizionamento CTA, wording, flusso post-click cliente, flusso post-click incaricato, tracciamento attribuzione referral).
+
+---
+
 ## Decisioni operative aperte / note future
 
 - **Dominio invinus.it**: ACQUISITO. DNS CNAME + Vercel domain config da fare.
