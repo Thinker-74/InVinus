@@ -1,5 +1,7 @@
 # Checkpoint — 2026-04-17 — M0 fix pooler provvigioni ✅
 
+**NOTA:** il nome file dice "17", ma la data effettiva è 24 aprile 2026. Errore dovuto a confusione del modello Claude sulla data di sistema.
+
 **Progetto:** InVinus
 **Milestone:** M0 — Fix ENOTFOUND calcolo provvigioni su Vercel
 

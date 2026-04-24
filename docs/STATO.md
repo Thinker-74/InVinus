@@ -5,7 +5,7 @@
 > Per decisioni strategiche vedi docs/01-* a docs/14-* + CLAUDE.md.
 > Per log cronologico milestone vedi docs/progress/.
 
-Ultimo aggiornamento: 2026-04-18 dopo M2
+Ultimo aggiornamento: 2026-04-24 dopo checkpoint correttivo
 
 ---
 
@@ -189,8 +189,10 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 
 ## Decisioni operative aperte / note future
 
+- **Dominio invinus.it**: ACQUISITO. DNS CNAME + Vercel domain config da fare.
+- **crm.invinus.it**: non ancora puntato a Vercel. Operativo dopo config dominio.
+- **NEXT_PUBLIC_SITE_URL**: da settare su Vercel dopo config crm.invinus.it (valore finale: `https://crm.invinus.it`)
+- **Ordine operativo prossima sessione**: (1) config crm.invinus.it su Vercel → (2) set NEXT_PUBLIC_SITE_URL → (3) smoke test → (4) ALLORA partire con M3 (referral). Motivo: M3 usa NEXT_PUBLIC_SITE_URL per link condivisibili — partire con URL Vercel e poi cambiare = debito.
 - **Requisito onboarding incaricati legacy**: importati in stato "in_onboarding" con grace period 30gg. Operano subito, KYC auto-caricato dall'incaricato, provvigioni trattenute fino a completamento e approvazione admin. Dettagli in M4/M5/M8 della roadmap (docs/08-roadmap-sviluppo.md).
 - **Bonus Car**: importo placeholder 250€/mese — DA DECIDERE definitivamente con Francesco Panzella.
 - **Conversione €→PV**: 1 PV ≈ 1€ nei test — da formalizzare con FP prima di M6.
-- **NEXT_PUBLIC_SITE_URL** su Vercel: ancora vuota — da configurare prima di M3 (referral).
-- **Dominio custom** `crm.invinus.it`: non configurato.
