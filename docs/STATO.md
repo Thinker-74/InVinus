@@ -5,7 +5,7 @@
 > Per decisioni strategiche vedi docs/01-* a docs/14-* + CLAUDE.md.
 > Per log cronologico milestone vedi docs/progress/.
 
-Ultimo aggiornamento: 2026-04-24 dopo checkpoint correttivo
+Ultimo aggiornamento: 2026-04-25 dopo chiusura M4.1
 
 ---
 
@@ -64,18 +64,22 @@ supabase/                              — config CLI (progetto linkato)
 
 ---
 
-## Schema DB — tabelle principali (21 tabelle su Supabase)
+## Schema DB — tabelle principali (23 tabelle su Supabase, post-M4.1)
 - `regioni`, `cantine_fornitrici`, `prodotti` (30 vini da 4 regioni)
 - `qualifiche` (9 status con tutte le % residuale per livello)
 - `incaricati` (albero self-join su sponsor_id; colonne extra: `auth_user_id UUID`, `ruolo ruolo_utente`, `foto_url`, `bio`, `messaggio_referral`, `specialita`)
 - `candidature` (form /ref/[code]; enum `stato_candidatura`: in_attesa/approvata/rifiutata)
 - `incaricato_vini_preferiti` (PK composita incaricato_id+prodotto_id, campo `ordine`)
-- `clienti`, `lead`, `ordini`, `ordini_righe`
+- `clienti` (esteso post-M4.1: `auth_user_id UUID`, `codice_fiscale VARCHAR`, `data_nascita DATE`, `stato stato_cliente`)
+- `inviti_cliente` (post-M4.1: token UUID, scadenza, consumato)
+- `indirizzi_cliente` (post-M4.1: FK cliente_id, tipo/residenza/fatturazione/spedizione, predefinito)
+- `lead`, `ordini`, `ordini_righe`
 - `storni_pv`, `provvigioni_mensili` (con JSONB residuale_dettaglio)
 - `eventi`, `eventi_partecipanti`, `interazioni_crm`
 - `cantina_personale`, `magazzino_consulente`, `movimenti_magazzino`
 - `box_degustazione`, `box_degustazione_righe`
 - **`db/schema.sql` è source of truth** — workflow: migration → applica prod → aggiorna schema → commit
+- **`db/migrations/005_clienti_registrazione_invito.sql`** — migration M4.1 (2026-04-25): inviti_cliente, indirizzi_cliente, colonne clienti, RPC, RLS
 - **NOTA:** `magazzino_consulente` (tabella) e `prezzo_consulente` (colonna prodotti) conservano il nome originale — eccezioni intenzionali confermate
 
 ---
@@ -110,24 +114,32 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 
 ---
 
-## RLS (stato attuale — post-M2, migration 004)
+## RLS (stato attuale — post-M2 + M4.1)
 
 ### Architettura policy
-- **21 tabelle** con policy granulari: anon / incaricato (solo propri) / admin (tutto)
-- Pattern: 2 policy PERMISSIVE per tabella — `inc_*` (predicato su `incaricato_id = current_incaricato_id()`) + `admin_all` (`current_is_admin()` FOR ALL)
+- **23 tabelle** (post-M4.1): policy granulari per tabella
+- Pattern: policy PERMISSIVE — `inc_*`/`cli_*`/`indcli_*`/`invcli_*` (predicato su ownership) + `admin_all`/`current_is_admin()` (bypass admin)
 - Reference tables (prodotti, regioni, qualifiche, cantine_fornitrici, box_*): `public_read` per anon + authenticated
 
 ### Funzioni helper (STABLE, SECURITY DEFINER)
 - `current_incaricato_id()` → INT: risolve auth.uid() → incaricati.id
+- `current_cliente_id()` → INT (post-M4.1): risolve auth.uid() → clienti.id
 - `current_is_admin()` → BOOLEAN: verifica ruolo='admin' per l'utente corrente
 - `get_my_profile()` → SETOF incaricati: profilo completo del proprio incaricato (bypassa column-level REVOKE)
 - `admin_get_incaricato_full(p_incaricato_id)` → SETOF incaricati: dettaglio singolo con colonne sensibili (solo admin)
 - `admin_get_all_incaricati_full()` → SETOF incaricati: lista completa con colonne sensibili (solo admin)
 
-### Column-level privileges su `incaricati`
-- **REVOKE** (7 colonne sensibili): `email`, `telefono`, `codice_fiscale`, `stripe_account_id`, `data_ultimo_status_change`, `approvato_da`, `approvato_il`
-- **GRANT** (22 colonne): tutte le restanti — leggibili da `authenticated` via SELECT diretto
-- Bypass controllato: `get_my_profile()` per area personale, `admin_get_*_full()` per area admin
+### RPC nuove post-M4.1
+- `crea_invito_cliente(p_nome, p_cognome, p_email, p_telefono)` → UUID token
+- `completa_registrazione_cliente(p_token, p_auth_user_id, p_data_nascita, p_codice_fiscale, ...indirizzi)` → INT cliente_id
+- `rigenera_invito_cliente(p_cliente_id)` → UUID nuovo token
+- `valida_token_invito(p_token)` → TABLE(valido, scadenza, incaricato_nome, incaricato_cognome, cliente_email) — pubblica (anon+authenticated)
+- `current_cliente_id()` → INT (helper auth)
+- `crea_ordine_incaricato` — modificata dual-mode (incaricato + cliente)
+
+### Column-level privileges su `clienti` (post-M4.1)
+- **REVOKE UPDATE** su tutte le colonne da `authenticated`
+- **GRANT UPDATE (nome, cognome, telefono)** a `authenticated` — solo questi campi modificabili dal cliente
 
 ### Storage
 - Bucket `profili`: policy `profili_public_read_no_listing` — SELECT pubblico con `storage.filename(name) != ''` (blocca listing, mantiene accesso per URL diretto)
@@ -178,7 +190,11 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 | M1.10 | docs/STATO.md come source of truth in-repo | ✅ |
 | M2 | RLS policy granulari per incaricato/admin su auth_user_id | ✅ completata 2026-04-18 |
 | M3 | Referral finalizzato (2 CTA: cliente/incaricato) | — |
-| M4 | Registrazione sdoppiata | — |
+| M4.1 | Schema registrazione cliente (tabelle + RPC + RLS) | ✅ completata 2026-04-25 |
+| M4.2 | UI incaricato "Aggiungi cliente" | — |
+| M4.3 | Pagina pubblica /invito/[token] | — |
+| M4.4 | Layout + dashboard cliente /cliente/* | — |
+| M4.5 | Catalogo + carrello + checkout cliente | — |
 | M5 | KYC + tesserino L.173/2005 | — |
 | M6 | Aree personali + wallet + documenti (inclusa cantina personale cliente) | — |
 | M6.5 | PWA mobile (micro-milestone dedicata, da pianificare) | — |
@@ -189,13 +205,19 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 
 ## Punti aperti
 
-- **M3 (referral finalizzato 2 CTA) — SOSPESA** in attesa di sessione con Francesco per decisioni UX/prodotto. Brainstorming avviato ma fermato dopo Domanda 1 (posizionamento CTA). Quando si riprende, partire dalle 5 domande impostate: posizionamento CTA, wording, flusso post-click cliente, flusso post-click incaricato, tracciamento attribuzione referral.
+- **M3 (referral finalizzato 2 CTA) — SOSPESA** in attesa di sessione con Francesco per decisioni UX/prodotto. Brainstorming avviato ma fermato dopo Domanda 1 (posizionamento CTA). Quando si riprende, partire dalle 5 domande impostate.
+
+- **M4.2-M4.5 (UI cliente) — DA AVVIARE**: dopo M4.1 lo scope è stato sdoppiato in 4 micro-milestone. Piano detail in `docs/m4-piano.md`.
 
 ---
 
 ## Prossimi passi
 
-- **Prima ripresa M3**: sessione con Francesco (CEO) presente. Agenda: (a) config crm.invinus.it DNS Vercel con lui, (b) set NEXT_PUBLIC_SITE_URL a `https://crm.invinus.it`, (c) decisioni UX M3 sulle 5 domande (posizionamento CTA, wording, flusso post-click cliente, flusso post-click incaricato, tracciamento attribuzione referral).
+- **M4.2**: UI incaricato — pagina "Aggiungi cliente" con modal, form 4 campi, DRY-RUN email (log console)
+- **M4.3**: Pagina pubblica `/invito/[token]` con form registrazione cliente + validazione età 18+
+- **M4.4**: Layout `/cliente/*` + dashboard + profilo + storico ordini
+- **M4.5**: Catalogo clienti + carrello + checkout (Stripe test / Satispay placeholder / Bonifico)
+- **Prima ripresa M3**: sessione con Francesco (CEO) per config crm.invinus.it + decisioni UX sulle 5 domande
 
 ---
 
