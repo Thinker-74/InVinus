@@ -5,7 +5,7 @@
 > Per decisioni strategiche vedi docs/01-* a docs/14-* + CLAUDE.md.
 > Per log cronologico milestone vedi docs/progress/.
 
-Ultimo aggiornamento: 2026-04-25 dopo chiusura M4.1
+Ultimo aggiornamento: 2026-04-30 dopo sblocchi infrastruttura + Briefing CRM v1.0
 
 ---
 
@@ -21,7 +21,7 @@ Ultimo aggiornamento: 2026-04-25 dopo chiusura M4.1
   - Root: `web/` dentro il monorepo InVinus
   - Una sola codebase per desktop (backoffice) e mobile (PWA installabile)
   - `npm run dev/build` richiede `--include=dev` (npm config omit=dev sul server)
-- **Hosting frontend:** Vercel (free tier) — **LIVE su `https://invinus.vercel.app`**
+- **Hosting frontend:** Vercel (free tier) — **LIVE su `https://invinus.vercel.app` + `https://crm.invinus.it`**
 - **Pagamenti:** Stripe (commissioni %, nessun costo fisso)
 - **Chat AI:** API Claude Sonnet (~10-15€/mese anno 1)
 - **Costo infrastruttura anno 1:** ~15€/mese
@@ -176,6 +176,7 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 - **Supabase MCP operativo**: `.mcp.json` in project root (transport `http`, project_ref scoped). MCP attivo — Claude Code esegue SQL in autonomia senza copia-incolla.
 - **Admin RPC per colonne sensibili**: `/admin/incaricati` usa `admin_get_all_incaricati_full()`, `/admin/incaricati/[id]` usa `admin_get_incaricato_full(p_incaricato_id)` — entrambe SECURITY DEFINER, bypass column-level REVOKE.
 - **gen types**: comando corretto post-M2: `supabase gen types typescript --linked 2>&1 | grep -v "^A new version\|^We recommend\|^Initialising\|^Running" > web/src/types/supabase.ts` (filtra righe CLI non-TS)
+- **Stripe/Satispay**: credenziali ricevute via canale privato da FP. Da configurare su Vercel prima di M4.5 (checkout).
 
 ---
 
@@ -189,7 +190,7 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 | M1.9 | Allineamento memory/docs (scope chiarito) | ✅ |
 | M1.10 | docs/STATO.md come source of truth in-repo | ✅ |
 | M2 | RLS policy granulari per incaricato/admin su auth_user_id | ✅ completata 2026-04-18 |
-| M3 | Referral finalizzato (2 CTA: cliente/incaricato) | — |
+| M3 | Referral — DEPRECATA (scope assorbito da M4) | ✅ ridefinita 2026-04-30 |
 | M4.1 | Schema registrazione cliente (tabelle + RPC + RLS) | ✅ completata 2026-04-25 |
 | M4.2 | UI incaricato "Aggiungi cliente" | — |
 | M4.3 | Pagina pubblica /invito/[token] | — |
@@ -205,9 +206,11 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 
 ## Punti aperti
 
-- **M3 (referral finalizzato 2 CTA) — SOSPESA** in attesa di sessione con Francesco per decisioni UX/prodotto. Brainstorming avviato ma fermato dopo Domanda 1 (posizionamento CTA). Quando si riprende, partire dalle 5 domande impostate.
+- **M3 — DEPRECATA in favore di M4 estesa** (2026-04-30). Il doppio CTA è stato sostituito dal flusso: l'incaricato pre-registra il cliente (M4.1–M4.4). Il cliente NON si autoregistra. M3 come precedentemente definita non sarà implementata.
 
-- **M4.2-M4.5 (UI cliente) — DA AVVIARE**: dopo M4.1 lo scope è stato sdoppiato in 4 micro-milestone. Piano detail in `docs/m4-piano.md`.
+- **Pagamenti — Stripe/Satispay**: credenziali ricevute da FP. NON ancora in Vercel. Azione bloccante per M4.5.
+
+- **M4.2–M4.5 (UI cliente) — DA AVVIARE**: dopo M4.1 lo scope è stato sdoppiato in 4 micro-milestone. Piano detail in `docs/m4-piano.md`.
 
 ---
 
@@ -216,17 +219,23 @@ Francesco (1) DIRECTOR — pv=102, sponsor=null (top of tree)
 - **M4.2**: UI incaricato — pagina "Aggiungi cliente" con modal, form 4 campi, DRY-RUN email (log console)
 - **M4.3**: Pagina pubblica `/invito/[token]` con form registrazione cliente + validazione età 18+
 - **M4.4**: Layout `/cliente/*` + dashboard + profilo + storico ordini
-- **M4.5**: Catalogo clienti + carrello + checkout (Stripe test / Satispay placeholder / Bonifico)
-- **Prima ripresa M3**: sessione con Francesco (CEO) per config crm.invinus.it + decisioni UX sulle 5 domande
+- **M4.5**: Catalogo clienti + carrello + checkout (Stripe/Satispay)
+- **Post-M4**: ricevere approvazione decisioni da Francesco → revisione roadmap completa (M3/M5/M7/M8)
+
+---
+
+## Riferimenti esterni
+
+- **Briefing CRM v1.0**: documento strategico Francesco (2026-04-29). Conservato fuori repo (canale privato CEO). I concetti chiave (MEMBER status, doppio piano compensi, ruolo DIREZIONE, voucher 30€, candidatura PENDENTE, Health Score, date 13 giugno + 17 ottobre) sono qui sintetizzati come riferimento. Singole decisioni di prodotto verranno tracciate in `docs/decisioni/<argomento>.md` quando implementate.
+- **25 decisioni prodotto**: in attesa di ricevere approvazione da Francesco. Argomenti: MEMBER status, piano compensi duale, ruolo DIREZIONE, voucher 30€, candidatura PENDENTE B-sotto-A, Health Score, WhatsApp Business, date PreLancio/Lancio, revisione roadmap post-M4.
 
 ---
 
 ## Decisioni operative aperte / note future
 
-- **Dominio invinus.it**: ACQUISITO. DNS CNAME + Vercel domain config da fare.
-- **crm.invinus.it**: non ancora puntato a Vercel. Operativo dopo config dominio.
-- **NEXT_PUBLIC_SITE_URL**: da settare su Vercel dopo config crm.invinus.it (valore finale: `https://crm.invinus.it`)
-- **Ordine operativo prossima sessione**: (1) config crm.invinus.it su Vercel → (2) set NEXT_PUBLIC_SITE_URL → (3) smoke test → (4) ALLORA partire con M3 (referral). Motivo: M3 usa NEXT_PUBLIC_SITE_URL per link condivisibili — partire con URL Vercel e poi cambiare = debito.
+- **Dominio crm.invinus.it**: ATTIVATO. CNAME su Ionos → Vercel. DNS propagato. ✅
+- **NEXT_PUBLIC_SITE_URL**: settata su Vercel Production + Preview (`https://crm.invinus.it`). ✅
+- **Stripe/Satispay**: credenziali ricevute via canale privato da FP. Da configurare su Vercel prima di M4.5.
 - **Requisito onboarding incaricati legacy**: importati in stato "in_onboarding" con grace period 30gg. Operano subito, KYC auto-caricato dall'incaricato, provvigioni trattenute fino a completamento e approvazione admin. Dettagli in M4/M5/M8 della roadmap (docs/08-roadmap-sviluppo.md).
 - **Bonus Car**: importo placeholder 250€/mese — DA DECIDERE definitivamente con Francesco Panzella.
 - **Conversione €→PV**: 1 PV ≈ 1€ nei test — da formalizzare con FP prima di M6.
